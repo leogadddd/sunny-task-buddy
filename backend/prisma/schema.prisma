@@ -11,21 +11,73 @@ datasource db {
 }
 
 model User {
+  id                String   @id @default(cuid())
+  email             String   @unique
+  emailVerified     Boolean  @default(false)
+  name              String?
+  image             String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relations
+  createdOrganizations Organization[]        @relation("OrganizationCreatedBy")
+  organizationMembers  OrganizationMember[]
+  projectAssignments   ProjectAssignment[]
+  createdTasks         Task[]                @relation("TaskCreatedBy")
+  assignedTasks        Task[]                @relation("TaskAssignee")
+  
+  // Better Auth relations
+  sessions             Session[]
+  accounts             Account[]
+
+  @@map("users")
+}
+
+// Better Auth tables
+model Session {
   id        String   @id @default(cuid())
-  email     String   @unique
-  name      String?
-  password  String
+  userId    String
+  expiresAt DateTime
+  token     String   @unique
+  ipAddress String?
+  userAgent String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  // Relations
-  createdOrganizations Organization[] @relation("OrganizationCreatedBy")
-  organizationMembers  OrganizationMember[]
-  projectAssignments   ProjectAssignment[]
-  createdTasks         Task[]           @relation("TaskCreatedBy")
-  assignedTasks        Task[]           @relation("TaskAssignee")
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@map("users")
+  @@map("sessions")
+}
+
+model Account {
+  id                String   @id @default(cuid())
+  userId            String
+  accountId         String
+  providerId        String
+  accessToken       String?
+  refreshToken      String?
+  idToken           String?
+  expiresAt         DateTime?
+  password          String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([providerId, accountId])
+  @@map("accounts")
+}
+
+model Verification {
+  id         String   @id @default(cuid())
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([identifier, value])
+  @@map("verifications")
 }
 
 model Organization {

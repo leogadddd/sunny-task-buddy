@@ -8,18 +8,16 @@ import { setContext } from "@apollo/client/link/context";
 import { onError } from "@apollo/client/link/error";
 
 const httpLink = createHttpLink({
-  uri: import.meta.env.VITE_API_URL || "http://localhost:4000/graphql",
+  uri: import.meta.env.VITE_GRAPHQL_URL || "http://localhost:4000/graphql",
+  credentials: "include", // Important: sends cookies with requests
 });
 
 const authLink = setContext((_, { headers }) => {
-  // Get the authentication token from local storage if it exists
-  const token = localStorage.getItem("token");
-
-  // Return the headers to the context so httpLink can read them
+  // Better Auth uses cookies, so we don't need to manually add tokens
+  // Cookies will be automatically sent with credentials: "include"
   return {
     headers: {
       ...headers,
-      authorization: token ? `Bearer ${token}` : "",
     },
   };
 });
@@ -37,10 +35,8 @@ const errorLink = onError(
     if (networkError) {
       console.log(`[Network error]: ${networkError}`);
 
-      // Handle 401 errors by clearing local storage and redirecting
+      // Handle 401 errors by redirecting to auth
       if ("statusCode" in networkError && networkError.statusCode === 401) {
-        localStorage.removeItem("token");
-        localStorage.removeItem("user");
         window.location.href = "/auth";
       }
     }

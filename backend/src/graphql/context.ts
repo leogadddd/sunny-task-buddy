@@ -1,11 +1,11 @@
 import { PrismaClient } from "@prisma/client";
+import { auth } from "../auth";
+import type { AuthSession, AuthUser } from "../auth";
 
 export interface Context {
   prisma: PrismaClient;
-  user?: {
-    id: string;
-    email: string;
-  };
+  session: AuthSession | null;
+  user: AuthUser | null;
 }
 
 const prisma = new PrismaClient();
@@ -15,12 +15,12 @@ export const createContext = async ({
 }: {
   req: any;
 }): Promise<Context> => {
-  // TODO: Add JWT token verification
-  // const token = req.headers.authorization?.replace('Bearer ', '');
-  // const user = await verifyToken(token);
+  // Get session from Better Auth using the request
+  const session = await auth.api.getSession({ headers: req.headers });
 
   return {
     prisma,
-    // user,
+    session: session?.session || null,
+    user: session?.user || null,
   };
 };
