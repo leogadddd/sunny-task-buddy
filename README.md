@@ -46,6 +46,29 @@ This project follows a modular architecture with separate frontend and backend a
    npm run backend:migrate
    ```
 
+### Dependency Management
+
+When adding new dependencies to `package.json`, you need to rebuild the Docker containers:
+
+#### Quick Setup (Recommended)
+
+```bash
+# Install all dependencies and rebuild containers
+./quick-setup.sh
+```
+
+#### Manual Setup
+
+```bash
+# Install dependencies for specific services
+./install-deps.sh frontend    # Frontend only
+./install-deps.sh backend     # Backend only
+./install-deps.sh all         # Both services
+
+# Or rebuild containers manually
+./install-deps.sh rebuild
+```
+
 ### Local Development (without Docker)
 
 1. **Install dependencies**
