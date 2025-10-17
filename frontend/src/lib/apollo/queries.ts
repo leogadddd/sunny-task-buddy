@@ -1,30 +1,52 @@
 import { gql } from "@apollo/client";
 
-// Auth Mutations
+// Auth Mutations (Phase 1 - Unified Response Format)
 export const REGISTER_MUTATION = gql`
-  mutation Register($input: RegisterInput!) {
-    register(input: $input) {
-      token
-      user {
-        id
-        email
-        name
-        createdAt
+  mutation Register($email: String!, $password: String!, $name: String) {
+    register(email: $email, password: $password, name: $name) {
+      success
+      message
+      data {
+        user {
+          id
+          email
+          name
+          emailVerified
+          createdAt
+        }
+        sessionToken
       }
+      errors
     }
   }
 `;
 
 export const LOGIN_MUTATION = gql`
-  mutation Login($input: LoginInput!) {
-    login(input: $input) {
-      token
-      user {
-        id
-        email
-        name
-        createdAt
+  mutation Login($email: String!, $password: String!) {
+    login(email: $email, password: $password) {
+      success
+      message
+      data {
+        user {
+          id
+          email
+          name
+          emailVerified
+          createdAt
+        }
+        sessionToken
       }
+      errors
+    }
+  }
+`;
+
+export const LOGOUT_MUTATION = gql`
+  mutation Logout {
+    logout {
+      success
+      message
+      errors
     }
   }
 `;
@@ -33,105 +55,84 @@ export const LOGIN_MUTATION = gql`
 export const ME_QUERY = gql`
   query Me {
     me {
-      id
-      email
-      name
-      createdAt
-      organizations {
-        id
-        name
-        description
-        createdAt
+      success
+      message
+      data {
+        user {
+          id
+          email
+          name
+          emailVerified
+          createdAt
+        }
+        sessionToken
       }
+      errors
     }
   }
 `;
 
-// Organization Queries
-export const ORGANIZATIONS_QUERY = gql`
-  query Organizations {
-    organizations {
-      id
-      name
-      description
-      createdAt
-      createdBy {
-        id
-        name
-        email
+// Workspace Queries (aligned with backend)
+export const MY_WORKSPACES_QUERY = gql`
+  query MyWorkspaces {
+    myWorkspaces {
+      success
+      message
+      data {
+        workspaces {
+          id
+          name
+          slug
+          description
+          color
+          status
+          createdAt
+          updatedAt
+          createdBy {
+            id
+            name
+            email
+          }
+          members {
+            id
+            name
+            email
+          }
+        }
       }
-      projects {
-        id
-        name
-        status
-        priority
-      }
+      errors
     }
   }
 `;
 
-export const ORGANIZATION_QUERY = gql`
-  query Organization($id: ID!) {
-    organization(id: $id) {
-      id
-      name
-      description
-      createdAt
-      updatedAt
-      createdBy {
-        id
-        name
-        email
+export const WORKSPACE_BY_SLUG_QUERY = gql`
+  query WorkspaceBySlug($slug: String!) {
+    workspaceBySlug(slug: $slug) {
+      success
+      message
+      data {
+        workspace {
+          id
+          name
+          slug
+          description
+          color
+          status
+          createdAt
+          updatedAt
+          createdBy {
+            id
+            name
+            email
+          }
+          members {
+            id
+            name
+            email
+          }
+        }
       }
-      projects {
-        id
-        name
-        description
-        status
-        priority
-        startDate
-        endDate
-        createdAt
-      }
-      members {
-        id
-        name
-        email
-      }
+      errors
     }
-  }
-`;
-
-// Organization Mutations
-export const CREATE_ORGANIZATION_MUTATION = gql`
-  mutation CreateOrganization($input: CreateOrganizationInput!) {
-    createOrganization(input: $input) {
-      id
-      name
-      description
-      createdAt
-      createdBy {
-        id
-        name
-        email
-      }
-    }
-  }
-`;
-
-export const UPDATE_ORGANIZATION_MUTATION = gql`
-  mutation UpdateOrganization($id: ID!, $input: UpdateOrganizationInput!) {
-    updateOrganization(id: $id, input: $input) {
-      id
-      name
-      description
-      updatedAt
-    }
-  }
-`;
-
-export const DELETE_ORGANIZATION_MUTATION = gql`
-  mutation DeleteOrganization($id: ID!) {
-    deleteOrganization(id: $id)
   }
 `;

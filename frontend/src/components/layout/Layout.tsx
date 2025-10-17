@@ -1,6 +1,6 @@
 import React from "react";
-import { CollapsibleSidebar } from "../CollapsibleSidebar";
-import { HomeSidebarContent } from "../sidebars/HomeSidebar";
+import { Header } from "../header/Header";
+import { Sidebar } from "../workspace-sidebar/Sidebar";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -8,9 +8,14 @@ interface LayoutProps {
 
 export function Layout({ children }: LayoutProps) {
   return (
-    <CollapsibleSidebar>
-      <HomeSidebarContent />
-      {children}
-    </CollapsibleSidebar>
+    <div className="h-screen flex flex-col">
+      <Header />
+      <div className="flex-1 flex">
+        <Sidebar />
+        <div className="flex-1 h-[calc(100vh-2rem)] overflow-auto">
+          {children}
+        </div>
+      </div>
+    </div>
   );
 }

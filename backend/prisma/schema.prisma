@@ -1,90 +1,125 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
+// This is your Prisma schema file
+// Learn more: https://pris.ly/d/prisma-schema
 
 generator client {
-  provider = "prisma-client-js"
+    provider = "prisma-client-js"
+}
+
+generator pothos {
+    provider = "prisma-pothos-types"
+    output   = "../src/generated/pothos-types.ts"
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
-}
-
-model User {
-  id                String   @id @default(cuid())
-  email             String   @unique
-  emailVerified     Boolean  @default(false)
-  name              String?
-  image             String?
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-
-  // Relations
-  createdOrganizations Organization[]        @relation("OrganizationCreatedBy")
-  // Better Auth relations
-  sessions             Session[]
-  accounts             Account[]
-
-  @@map("users")
+    provider = "postgresql"
+    url      = env("DATABASE_URL")
 }
 
 // Better Auth tables
-model Session {
-  id        String   @id @default(cuid())
-  userId    String
-  expiresAt DateTime
-  token     String   @unique
-  ipAddress String?
-  userAgent String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+model User {
+    id            String   @id @default(cuid())
+    email         String   @unique
+    emailVerified Boolean  @default(false)
+    name          String?
+    image         String?
+    createdAt     DateTime @default(now())
+    updatedAt     DateTime @updatedAt
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+    accounts          Account[]
+    sessions          Session[]
+    workspaces        Workspace[] @relation("WorkspaceMembers")
+    createdWorkspaces Workspace[] @relation("WorkspaceCreator")
+    tasks             Task[]      @relation("TaskAssignees")
 
-  @@map("sessions")
+    @@map("users")
 }
 
 model Account {
-  id                String   @id @default(cuid())
-  userId            String
-  accountId         String
-  providerId        String
-  accessToken       String?
-  refreshToken      String?
-  idToken           String?
-  expiresAt         DateTime?
-  password          String?
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+    id                String  @id @default(cuid())
+    userId            String
+    type              String
+    provider          String
+    providerAccountId String
+    refresh_token     String?
+    access_token      String?
+    expires_at        Int?
+    token_type        String?
+    scope             String?
+    id_token          String?
+    session_state     String?
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+    user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@unique([providerId, accountId])
-  @@map("accounts")
+    @@unique([provider, providerAccountId])
+    @@map("accounts")
+}
+
+model Session {
+    id           String   @id @default(cuid())
+    sessionToken String   @unique
+    userId       String
+    expires      DateTime
+    user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@map("sessions")
 }
 
 model Verification {
-  id         String   @id @default(cuid())
-  identifier String
-  value      String
-  expiresAt  DateTime
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+    id         String   @id @default(cuid())
+    identifier String
+    token      String   @unique
+    expires    DateTime
+    createdAt  DateTime @default(now())
 
-  @@unique([identifier, value])
-  @@map("verifications")
+    @@unique([identifier, token])
+    @@map("verifications")
 }
 
-model Organization {
-  id          String   @id @default(cuid())
-  name        String
-  description String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  createdById String
+// Your application tables
+model Workspace {
+    id          String   @id @default(cuid())
+    slug        String   @unique
+    name        String
+    description String?
+    color       String
+    createdAt   DateTime @default(now())
+    updatedAt   DateTime @updatedAt
+    status      String   @default("active") // active, archived
+    createdById String
 
-  // Relations
-  createdBy User                 @relation("OrganizationCreatedBy", fields: [createdById], references: [id], onDelete: Cascade)
+    createdBy User      @relation("WorkspaceCreator", fields: [createdById], references: [id])
+    projects  Project[]
+    members   User[]    @relation("WorkspaceMembers")
+}
 
-  @@map("organizations")
+model Project {
+    id          String    @id @default(cuid())
+    slug        String    @unique
+    name        String
+    description String?
+    color       String
+    createdAt   DateTime  @default(now())
+    updatedAt   DateTime  @updatedAt
+    workspaceId String
+    workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+    tasks       Task[]
+    status      String    @default("active") // active, archived
+}
+
+model Task {
+    id          String    @id @default(cuid())
+    slug        String    @unique
+    title       String
+    description String?
+    status      String    @default("todo") // todo, in-progress, done
+    priority    String    @default("medium") // low, medium, high
+    dueDate     DateTime?
+    createdAt   DateTime  @default(now())
+    updatedAt   DateTime  @updatedAt
+    projectId   String
+    project     Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+    assignees   User[]    @relation("TaskAssignees")
 }

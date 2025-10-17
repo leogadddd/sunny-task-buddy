@@ -13,11 +13,14 @@ const httpLink = createHttpLink({
 });
 
 const authLink = setContext((_, { headers }) => {
-  // Better Auth uses cookies, so we don't need to manually add tokens
-  // Cookies will be automatically sent with credentials: "include"
+  // Get session token from localStorage
+  const sessionToken = localStorage.getItem("sessionToken");
+
   return {
     headers: {
       ...headers,
+      // Send session token as Bearer token if it exists
+      ...(sessionToken ? { authorization: `Bearer ${sessionToken}` } : {}),
     },
   };
 });

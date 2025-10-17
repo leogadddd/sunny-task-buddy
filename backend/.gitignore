@@ -3,4 +3,6 @@ dist
 .env
 *.log
 .DS_Store
-prisma/migrations
+
+# Generated files
+src/generated/

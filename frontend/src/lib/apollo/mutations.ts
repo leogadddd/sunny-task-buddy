@@ -2,8 +2,8 @@ import { gql } from "@apollo/client";
 
 // Project Queries
 export const PROJECTS_QUERY = gql`
-  query Projects($organizationId: ID) {
-    projects(organizationId: $organizationId) {
+  query Projects($workspaceId: ID) {
+    projects(workspaceId: $workspaceId) {
       id
       name
       description
@@ -13,7 +13,7 @@ export const PROJECTS_QUERY = gql`
       endDate
       createdAt
       updatedAt
-      organization {
+      workspace {
         id
         name
       }
@@ -45,7 +45,7 @@ export const PROJECT_QUERY = gql`
       endDate
       createdAt
       updatedAt
-      organization {
+      workspace {
         id
         name
       }
@@ -89,7 +89,7 @@ export const CREATE_PROJECT_MUTATION = gql`
       startDate
       endDate
       createdAt
-      organization {
+      workspace {
         id
         name
       }
@@ -162,7 +162,7 @@ export const TASK_QUERY = gql`
       project {
         id
         name
-        organization {
+        workspace {
           id
           name
         }
@@ -232,5 +232,85 @@ export const UPDATE_TASK_MUTATION = gql`
 export const DELETE_TASK_MUTATION = gql`
   mutation DeleteTask($id: ID!) {
     deleteTask(id: $id)
+  }
+`;
+
+// Workspace Mutations (aligned with backend)
+export const CREATE_WORKSPACE_MUTATION = gql`
+  mutation CreateWorkspace(
+    $name: String!
+    $description: String
+    $color: String
+  ) {
+    createWorkspace(name: $name, description: $description, color: $color) {
+      success
+      message
+      data {
+        workspace {
+          id
+          name
+          slug
+          description
+          color
+          status
+          createdAt
+          updatedAt
+          createdBy {
+            id
+            name
+            email
+          }
+          members {
+            id
+            name
+            email
+          }
+        }
+      }
+      errors
+    }
+  }
+`;
+
+export const UPDATE_WORKSPACE_MUTATION = gql`
+  mutation UpdateWorkspace(
+    $id: String!
+    $name: String
+    $description: String
+    $color: String
+    $status: String
+  ) {
+    updateWorkspace(
+      id: $id
+      name: $name
+      description: $description
+      color: $color
+      status: $status
+    ) {
+      success
+      message
+      data {
+        workspace {
+          id
+          name
+          slug
+          description
+          color
+          status
+          updatedAt
+        }
+      }
+      errors
+    }
+  }
+`;
+
+export const DELETE_WORKSPACE_MUTATION = gql`
+  mutation DeleteWorkspace($id: String!) {
+    deleteWorkspace(id: $id) {
+      success
+      message
+      errors
+    }
   }
 `;
