@@ -1,11 +1,11 @@
 import { create } from "zustand";
+import { workspaceApi } from "@/api/workspace.api";
+import { toast } from "sonner";
 import {
-  workspaceApi,
-  Workspace,
   CreateWorkspaceInput,
   UpdateWorkspaceInput,
-} from "@/api/workspace.api";
-import { toast } from "sonner";
+  Workspace,
+} from "@/interfaces/workspace";
 
 interface WorkspaceState {
   workspaces: Workspace[];
@@ -18,6 +18,17 @@ interface WorkspaceState {
   createWorkspace: (input: CreateWorkspaceInput) => Promise<Workspace>;
   updateWorkspace: (id: string, input: UpdateWorkspaceInput) => Promise<void>;
   deleteWorkspace: (id: string) => Promise<void>;
+  addMember: (
+    workspaceId: string,
+    userId: string,
+    role?: "ADMIN" | "EDITOR" | "VIEWER"
+  ) => Promise<void>;
+  updateMemberRole: (
+    workspaceId: string,
+    userId: string,
+    role: "ADMIN" | "EDITOR" | "VIEWER"
+  ) => Promise<void>;
+  removeMember: (workspaceId: string, userId: string) => Promise<void>;
   setCurrentWorkspace: (workspace: Workspace | null) => void;
   getWorkspaceBySlug: (slug: string) => Promise<Workspace | null>;
   clearError: () => void;
@@ -48,7 +59,16 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
   createWorkspace: async (input: CreateWorkspaceInput) => {
     set({ isLoading: true, error: null });
     try {
-      const newWorkspace = await workspaceApi.createWorkspace(input);
+      const createPromise = workspaceApi.createWorkspace(input);
+
+      toast.promise(createPromise, {
+        loading: "Creating workspace...",
+        success: (newWorkspace: Workspace) =>
+          `"${newWorkspace.name}" created successfully`,
+        error: "Failed to create workspace",
+      });
+
+      const newWorkspace = await createPromise;
 
       // Optimistic update
       set((state) => ({
@@ -56,7 +76,6 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
         isLoading: false,
       }));
 
-      toast.success(`Workspace "${input.name}" created successfully!`);
       return newWorkspace;
     } catch (error) {
       const errorMessage =
@@ -65,7 +84,7 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
         error: errorMessage,
         isLoading: false,
       });
-      toast.error(errorMessage);
+      // Don't show error toast here since toast.promise handles it
       throw error; // Re-throw to allow components to handle it
     }
   },
@@ -75,7 +94,15 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
       get().workspaces.find((ws) => ws.id === id)?.name || "Workspace";
     set({ isLoading: true, error: null });
     try {
-      const updatedWorkspace = await workspaceApi.updateWorkspace(id, input);
+      const updatePromise = workspaceApi.updateWorkspace(id, input);
+
+      toast.promise(updatePromise, {
+        loading: "Updating workspace...",
+        success: `"${workspaceName}" updated successfully`,
+        error: "Failed to update workspace",
+      });
+
+      const updatedWorkspace = await updatePromise;
 
       // Optimistic update
       set((state) => ({
@@ -88,8 +115,6 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
             : state.currentWorkspace,
         isLoading: false,
       }));
-
-      toast.success(`"${workspaceName}" updated successfully`);
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : "Failed to update workspace";
@@ -97,7 +122,7 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
         error: errorMessage,
         isLoading: false,
       });
-      toast.error(errorMessage);
+      // Don't show error toast here since toast.promise handles it
       throw error;
     }
   },
@@ -110,7 +135,15 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
 
     set({ isLoading: true, error: null });
     try {
-      await workspaceApi.deleteWorkspace(id);
+      const deletePromise = workspaceApi.deleteWorkspace(id);
+
+      toast.promise(deletePromise, {
+        loading: "Deleting workspace...",
+        success: `"${workspaceName}" deleted successfully`,
+        error: "Failed to delete workspace",
+      });
+
+      await deletePromise;
 
       // Find the index of the deleted workspace
       const deletedIndex = state.workspaces.findIndex((ws) => ws.id === id);
@@ -134,8 +167,6 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
         currentWorkspace: newCurrentWorkspace,
         isLoading: false,
       });
-
-      toast.success(`"${workspaceName}" deleted successfully`);
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : "Failed to delete workspace";
@@ -143,7 +174,7 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
         error: errorMessage,
         isLoading: false,
       });
-      toast.error(errorMessage);
+      // Don't show error toast here since toast.promise handles it
       throw error;
     }
   },
@@ -165,12 +196,134 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
         error: errorMessage,
         isLoading: false,
       });
-      toast.error(errorMessage);
+      // toast.error(errorMessage);
       return null;
     }
   },
 
   clearError: () => {
     set({ error: null });
+  },
+
+  addMember: async (workspaceId: string, userId: string, role = "VIEWER") => {
+    set({ isLoading: true, error: null });
+    try {
+      const addPromise = workspaceApi.addMember(
+        workspaceId,
+        userId,
+        role as "ADMIN" | "EDITOR" | "VIEWER"
+      );
+
+      toast.promise(addPromise, {
+        loading: "Adding member...",
+        success: "Member added successfully",
+        error: "Failed to add member",
+      });
+
+      const updatedWorkspace = await addPromise;
+
+      // Update the current workspace and the workspaces list if it matches
+      set((state) => ({
+        workspaces: state.workspaces.map((ws) =>
+          ws.id === workspaceId ? updatedWorkspace : ws
+        ),
+        currentWorkspace:
+          state.currentWorkspace?.id === workspaceId
+            ? updatedWorkspace
+            : state.currentWorkspace,
+        isLoading: false,
+      }));
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to add member";
+      set({
+        error: errorMessage,
+        isLoading: false,
+      });
+      // Don't show error toast here since toast.promise handles it
+      throw error;
+    }
+  },
+
+  updateMemberRole: async (
+    workspaceId: string,
+    userId: string,
+    role: "ADMIN" | "EDITOR" | "VIEWER"
+  ) => {
+    set({ isLoading: true, error: null });
+    try {
+      const updateRolePromise = workspaceApi.updateMemberRole(
+        workspaceId,
+        userId,
+        role
+      );
+
+      toast.promise(updateRolePromise, {
+        loading: "Updating member role...",
+        success: "Member role updated successfully",
+        error: "Failed to update member role",
+      });
+
+      const updatedWorkspace = await updateRolePromise;
+
+      // Update the current workspace and the workspaces list if it matches
+      set((state) => ({
+        workspaces: state.workspaces.map((ws) =>
+          ws.id === workspaceId ? updatedWorkspace : ws
+        ),
+        currentWorkspace:
+          state.currentWorkspace?.id === workspaceId
+            ? updatedWorkspace
+            : state.currentWorkspace,
+        isLoading: false,
+      }));
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to update member role";
+      set({
+        error: errorMessage,
+        isLoading: false,
+      });
+      // Don't show error toast here since toast.promise handles it
+      throw error;
+    }
+  },
+
+  removeMember: async (workspaceId: string, userId: string) => {
+    set({ isLoading: true, error: null });
+    try {
+      const removePromise = workspaceApi.removeMember(workspaceId, userId);
+
+      toast.promise(removePromise, {
+        loading: "Removing member...",
+        success: "Member removed successfully",
+        error: "Failed to remove member",
+      });
+
+      const updatedWorkspace = await removePromise;
+
+      console.log("Updated Workspace after removal:", updatedWorkspace);
+
+      // Update the current workspace and the workspaces list if it matches
+      set((state) => ({
+        workspaces: state.workspaces.map((ws) =>
+          ws.id === workspaceId ? updatedWorkspace : ws
+        ),
+        currentWorkspace:
+          state.currentWorkspace?.id === workspaceId
+            ? updatedWorkspace
+            : state.currentWorkspace,
+        isLoading: false,
+      }));
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to remove member";
+      set({
+        error: errorMessage,
+        isLoading: false,
+      });
+      // Don't show error toast here since toast.promise handles it
+      throw error;
+    }
   },
 }));

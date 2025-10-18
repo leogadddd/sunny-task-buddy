@@ -1,10 +1,10 @@
-import React from "react";
-import { Plus } from "lucide-react";
+import React, { useEffect, useState } from "react";
+import { Home, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useWorkspaceStore } from "@/stores/workspace.store";
-import { CreateWorkspaceDialog } from "../dialogs/CreateWorkspaceDialog";
+import { WorkspaceDialog } from "../dialogs/WorkspaceDialog";
 import { WorkspaceItem } from "./WorkspaceItem";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useResolvedPath, useLocation } from "react-router-dom";
 
 export function Sidebar() {
   const {
@@ -14,25 +14,56 @@ export function Sidebar() {
     fetchWorkspaces,
     deleteWorkspace,
   } = useWorkspaceStore();
-  const [isCreateDialogOpen, setIsCreateDialogOpen] = React.useState(false);
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const navigate = useNavigate();
+  const resolvedPath = useResolvedPath("");
+  const location = useLocation();
 
-  React.useEffect(() => {
+  useEffect(() => {
     fetchWorkspaces();
   }, [fetchWorkspaces]);
 
   // Navigate to the new current workspace after deletion
-  React.useEffect(() => {
-    if (currentWorkspace) {
-      navigate(`/w/${currentWorkspace.slug}`);
-    } else if (workspaces.length === 0) {
-      // No workspaces left, go to dashboard
-      navigate("/dashboard");
+  useEffect(() => {
+    if (currentWorkspace && location.pathname !== "/dashboard") {
+      const expectedPath = `/w/${currentWorkspace.slug}`;
+      if (location.pathname !== expectedPath) {
+        navigate(expectedPath);
+      }
+    } else if (
+      workspaces.length === 0 &&
+      !currentWorkspace &&
+      !location.pathname.startsWith("/w/")
+    ) {
+      if (location.pathname !== "/dashboard") {
+        navigate("/dashboard");
+      }
     }
-  }, [currentWorkspace?.id]); // Only trigger when current workspace ID changes
+  }, [currentWorkspace, location.pathname, navigate, workspaces.length]);
+
+  // Clear currentWorkspace when navigating away from workspace routes
+  useEffect(() => {
+    if (!location.pathname.startsWith("/w/")) {
+      setCurrentWorkspace(null);
+    }
+  }, [location.pathname, setCurrentWorkspace]);
 
   return (
-    <div className="w-16 bg-background flex flex-col items-center pb-4 pt-2 space-y-1 border-r">
+    <div className="w-16 bg-background flex flex-col items-center pb-4 pt-2 space-y-2 border-r">
+      {/* Dashboard Button */}
+      <Button
+        variant="ghost"
+        size="sm"
+        // get the current pathname to highlight if on dashboard
+        className={`w-12 h-12 rounded-2xl bg-card text-primary border transition-transform p-0 ${
+          resolvedPath.pathname === "/dashboard" ? "scale-105" : ""
+        }`}
+        onClick={() => navigate("/dashboard")}
+        title="Dashboard"
+      >
+        <Home size={32} />
+      </Button>
+
       {/* Workspace Icons */}
       {workspaces.map((workspace) => (
         <WorkspaceItem
@@ -44,23 +75,21 @@ export function Sidebar() {
         />
       ))}
 
-      {/* Separator */}
-      {workspaces.length > 0 && <div className="w-8 h-px bg-muted my-2" />}
-
       {/* Add Workspace Button */}
       <Button
         variant="ghost"
         size="sm"
-        className="w-12 h-12 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary p-0"
+        className="w-12 h-12 rounded-2xl bg-card border p-0"
         onClick={() => setIsCreateDialogOpen(true)}
         title="Add Workspace"
       >
         <Plus className="w-6 h-6" />
       </Button>
 
-      <CreateWorkspaceDialog
+      <WorkspaceDialog
         open={isCreateDialogOpen}
         onOpenChange={setIsCreateDialogOpen}
+        workspace={null}
       />
     </div>
   );

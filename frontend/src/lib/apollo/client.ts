@@ -4,7 +4,7 @@ import {
   createHttpLink,
   from,
 } from "@apollo/client";
-import { setContext } from "@apollo/client/link/context";
+
 import { onError } from "@apollo/client/link/error";
 
 const httpLink = createHttpLink({
@@ -12,26 +12,15 @@ const httpLink = createHttpLink({
   credentials: "include", // Important: sends cookies with requests
 });
 
-const authLink = setContext((_, { headers }) => {
-  // Get session token from localStorage
-  const sessionToken = localStorage.getItem("sessionToken");
-
-  return {
-    headers: {
-      ...headers,
-      // Send session token as Bearer token if it exists
-      ...(sessionToken ? { authorization: `Bearer ${sessionToken}` } : {}),
-    },
-  };
-});
-
 const errorLink = onError(
   ({ graphQLErrors, networkError, operation, forward }) => {
     if (graphQLErrors) {
       graphQLErrors.forEach(({ message, locations, path }) =>
-        console.log(
-          `[GraphQL error]: Message: ${message}, Location: ${locations}, Path: ${path}`
-        )
+        console.log({
+          message: "[GraphQL error]: Message: " + message,
+          locations,
+          path,
+        })
       );
     }
 
@@ -47,7 +36,7 @@ const errorLink = onError(
 );
 
 export const apolloClient = new ApolloClient({
-  link: from([errorLink, authLink, httpLink]),
+  link: from([errorLink, httpLink]),
   cache: new InMemoryCache({
     typePolicies: {
       Query: {

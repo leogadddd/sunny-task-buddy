@@ -6,11 +6,29 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { authClient } from "@/lib/auth/client";
+import { apolloClient } from "@/lib/apollo/client";
+import { LOGOUT_MUTATION } from "@/lib/apollo/queries";
+import appConfig from "@/config/app.config";
 
 export function MenuPopover() {
   const handleLogout = async () => {
-    await authClient.signOut();
+    try {
+      await apolloClient.mutate({
+        mutation: LOGOUT_MUTATION,
+      });
+
+      // Reset Apollo cache
+      try {
+        await apolloClient.clearStore();
+      } catch (e) {
+        console.warn("Failed to clear client state after logout", e);
+      }
+
+      // Redirect to configured URL
+      window.location.href = appConfig.auth.logoutRedirectUrl || "/";
+    } catch (err) {
+      console.error("Logout failed", err);
+    }
   };
 
   return (

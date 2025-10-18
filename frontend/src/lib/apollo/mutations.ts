@@ -1,239 +1,5 @@
 import { gql } from "@apollo/client";
-
-// Project Queries
-export const PROJECTS_QUERY = gql`
-  query Projects($workspaceId: ID) {
-    projects(workspaceId: $workspaceId) {
-      id
-      name
-      description
-      status
-      priority
-      startDate
-      endDate
-      createdAt
-      updatedAt
-      workspace {
-        id
-        name
-      }
-      assignees {
-        id
-        name
-        email
-      }
-      tasks {
-        id
-        title
-        status
-        priority
-        dueDate
-      }
-    }
-  }
-`;
-
-export const PROJECT_QUERY = gql`
-  query Project($id: ID!) {
-    project(id: $id) {
-      id
-      name
-      description
-      status
-      priority
-      startDate
-      endDate
-      createdAt
-      updatedAt
-      workspace {
-        id
-        name
-      }
-      assignees {
-        id
-        name
-        email
-      }
-      tasks {
-        id
-        title
-        description
-        status
-        priority
-        dueDate
-        createdAt
-        assignee {
-          id
-          name
-          email
-        }
-        createdBy {
-          id
-          name
-          email
-        }
-      }
-    }
-  }
-`;
-
-// Project Mutations
-export const CREATE_PROJECT_MUTATION = gql`
-  mutation CreateProject($input: CreateProjectInput!) {
-    createProject(input: $input) {
-      id
-      name
-      description
-      status
-      priority
-      startDate
-      endDate
-      createdAt
-      workspace {
-        id
-        name
-      }
-    }
-  }
-`;
-
-export const UPDATE_PROJECT_MUTATION = gql`
-  mutation UpdateProject($id: ID!, $input: UpdateProjectInput!) {
-    updateProject(id: $id, input: $input) {
-      id
-      name
-      description
-      status
-      priority
-      startDate
-      endDate
-      updatedAt
-    }
-  }
-`;
-
-export const DELETE_PROJECT_MUTATION = gql`
-  mutation DeleteProject($id: ID!) {
-    deleteProject(id: $id)
-  }
-`;
-
-// Task Queries
-export const TASKS_QUERY = gql`
-  query Tasks($projectId: ID) {
-    tasks(projectId: $projectId) {
-      id
-      title
-      description
-      status
-      priority
-      dueDate
-      createdAt
-      updatedAt
-      project {
-        id
-        name
-      }
-      assignee {
-        id
-        name
-        email
-      }
-      createdBy {
-        id
-        name
-        email
-      }
-    }
-  }
-`;
-
-export const TASK_QUERY = gql`
-  query Task($id: ID!) {
-    task(id: $id) {
-      id
-      title
-      description
-      status
-      priority
-      dueDate
-      createdAt
-      updatedAt
-      project {
-        id
-        name
-        workspace {
-          id
-          name
-        }
-      }
-      assignee {
-        id
-        name
-        email
-      }
-      createdBy {
-        id
-        name
-        email
-      }
-    }
-  }
-`;
-
-// Task Mutations
-export const CREATE_TASK_MUTATION = gql`
-  mutation CreateTask($input: CreateTaskInput!) {
-    createTask(input: $input) {
-      id
-      title
-      description
-      status
-      priority
-      dueDate
-      createdAt
-      project {
-        id
-        name
-      }
-      assignee {
-        id
-        name
-        email
-      }
-      createdBy {
-        id
-        name
-        email
-      }
-    }
-  }
-`;
-
-export const UPDATE_TASK_MUTATION = gql`
-  mutation UpdateTask($id: ID!, $input: UpdateTaskInput!) {
-    updateTask(id: $id, input: $input) {
-      id
-      title
-      description
-      status
-      priority
-      dueDate
-      updatedAt
-      assignee {
-        id
-        name
-        email
-      }
-    }
-  }
-`;
-
-export const DELETE_TASK_MUTATION = gql`
-  mutation DeleteTask($id: ID!) {
-    deleteTask(id: $id)
-  }
-`;
+import { WORKSPACE_FRAGMENT } from "./fragments";
 
 // Workspace Mutations (aligned with backend)
 export const CREATE_WORKSPACE_MUTATION = gql`
@@ -247,29 +13,13 @@ export const CREATE_WORKSPACE_MUTATION = gql`
       message
       data {
         workspace {
-          id
-          name
-          slug
-          description
-          color
-          status
-          createdAt
-          updatedAt
-          createdBy {
-            id
-            name
-            email
-          }
-          members {
-            id
-            name
-            email
-          }
+          ...WorkspaceFragment
         }
       }
       errors
     }
   }
+  ${WORKSPACE_FRAGMENT}
 `;
 
 export const UPDATE_WORKSPACE_MUTATION = gql`
@@ -291,18 +41,13 @@ export const UPDATE_WORKSPACE_MUTATION = gql`
       message
       data {
         workspace {
-          id
-          name
-          slug
-          description
-          color
-          status
-          updatedAt
+          ...WorkspaceFragment
         }
       }
       errors
     }
   }
+  ${WORKSPACE_FRAGMENT}
 `;
 
 export const DELETE_WORKSPACE_MUTATION = gql`
@@ -313,4 +58,67 @@ export const DELETE_WORKSPACE_MUTATION = gql`
       errors
     }
   }
+`;
+
+export const UPDATE_WORKSPACE_MEMBER_ROLE_MUTATION = gql`
+  mutation UpdateWorkspaceMemberRole(
+    $workspaceId: String!
+    $userId: String!
+    $role: String!
+  ) {
+    updateWorkspaceMemberRole(
+      workspaceId: $workspaceId
+      userId: $userId
+      role: $role
+    ) {
+      success
+      message
+      data {
+        workspace {
+          ...WorkspaceFragment
+        }
+      }
+      errors
+    }
+  }
+  ${WORKSPACE_FRAGMENT}
+`;
+
+export const REMOVE_WORKSPACE_MEMBER_MUTATION = gql`
+  mutation RemoveWorkspaceMember($workspaceId: String!, $userId: String!) {
+    removeWorkspaceMember(workspaceId: $workspaceId, userId: $userId) {
+      success
+      message
+      data {
+        workspace {
+          ...WorkspaceFragment
+        }
+      }
+      errors
+    }
+  }
+  ${WORKSPACE_FRAGMENT}
+`;
+export const ADD_WORKSPACE_MEMBER_MUTATION = gql`
+  mutation AddWorkspaceMember(
+    $workspaceId: String!
+    $userId: String!
+    $role: String
+  ) {
+    addWorkspaceMember(
+      workspaceId: $workspaceId
+      userId: $userId
+      role: $role
+    ) {
+      success
+      message
+      data {
+        workspace {
+          ...WorkspaceFragment
+        }
+      }
+      errors
+    }
+  }
+  ${WORKSPACE_FRAGMENT}
 `;

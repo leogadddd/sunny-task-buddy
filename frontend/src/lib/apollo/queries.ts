@@ -1,24 +1,32 @@
 import { gql } from "@apollo/client";
+import { USER_FRAGMENT, WORKSPACE_FRAGMENT } from "./fragments";
 
 // Auth Mutations (Phase 1 - Unified Response Format)
 export const REGISTER_MUTATION = gql`
-  mutation Register($email: String!, $password: String!, $name: String) {
-    register(email: $email, password: $password, name: $name) {
+  mutation Register(
+    $email: String!
+    $password: String!
+    $firstName: String
+    $lastName: String
+  ) {
+    register(
+      email: $email
+      password: $password
+      firstName: $firstName
+      lastName: $lastName
+    ) {
       success
       message
       data {
         user {
-          id
-          email
-          name
-          emailVerified
-          createdAt
+          ...UserFragment
         }
         sessionToken
       }
       errors
     }
   }
+  ${USER_FRAGMENT}
 `;
 
 export const LOGIN_MUTATION = gql`
@@ -28,17 +36,14 @@ export const LOGIN_MUTATION = gql`
       message
       data {
         user {
-          id
-          email
-          name
-          emailVerified
-          createdAt
+          ...UserFragment
         }
         sessionToken
       }
       errors
     }
   }
+  ${USER_FRAGMENT}
 `;
 
 export const LOGOUT_MUTATION = gql`
@@ -59,15 +64,24 @@ export const ME_QUERY = gql`
       message
       data {
         user {
-          id
-          email
-          name
-          emailVerified
-          createdAt
+          ...UserFragment
         }
         sessionToken
       }
       errors
+    }
+  }
+  ${USER_FRAGMENT}
+`;
+
+export const SEARCH_USERS_QUERY = gql`
+  query SearchUsers($query: String!, $workspaceId: String, $limit: Int) {
+    searchUsers(query: $query, workspaceId: $workspaceId, limit: $limit) {
+      id
+      email
+      firstName
+      lastName
+      username
     }
   }
 `;
@@ -80,29 +94,13 @@ export const MY_WORKSPACES_QUERY = gql`
       message
       data {
         workspaces {
-          id
-          name
-          slug
-          description
-          color
-          status
-          createdAt
-          updatedAt
-          createdBy {
-            id
-            name
-            email
-          }
-          members {
-            id
-            name
-            email
-          }
+          ...WorkspaceFragment
         }
       }
       errors
     }
   }
+  ${WORKSPACE_FRAGMENT}
 `;
 
 export const WORKSPACE_BY_SLUG_QUERY = gql`
@@ -112,27 +110,11 @@ export const WORKSPACE_BY_SLUG_QUERY = gql`
       message
       data {
         workspace {
-          id
-          name
-          slug
-          description
-          color
-          status
-          createdAt
-          updatedAt
-          createdBy {
-            id
-            name
-            email
-          }
-          members {
-            id
-            name
-            email
-          }
+          ...WorkspaceFragment
         }
       }
       errors
     }
   }
+  ${WORKSPACE_FRAGMENT}
 `;

@@ -7,8 +7,7 @@ import { ME_QUERY } from "@/lib/apollo/queries";
  */
 export function useAuth() {
   const { data, loading, error } = useQuery(ME_QUERY, {
-    // Only fetch if we have a session token
-    skip: !localStorage.getItem("sessionToken"),
+    // Let server determine authentication via HttpOnly cookie
     errorPolicy: "all",
   });
 

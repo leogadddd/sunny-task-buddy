@@ -1,5 +1,6 @@
 import { builder } from "../../builder.js";
 import { success, fail } from "../../utils/response.js";
+import { getColorName } from "../../../lib/image-color.js";
 
 /**
  * Pothos-based Workspace Types and Resolvers
@@ -15,6 +16,46 @@ function generateSlug(name: string): string {
     .replace(/[\s_-]+/g, "-") // Replace spaces and underscores with hyphens
     .replace(/^-+|-+$/g, ""); // Remove leading/trailing hyphens
 }
+
+// Enums for WorkspaceMember
+const WorkspaceMemberRoleEnum = builder.enumType("WorkspaceMemberRole", {
+  values: {
+    ADMIN: {},
+    EDITOR: {},
+    VIEWER: {},
+  },
+});
+
+const WorkspaceMemberStatusEnum = builder.enumType("WorkspaceMemberStatus", {
+  values: {
+    INVITED: {},
+    ACTIVE: {},
+  },
+});
+
+// WorkspaceMember type from Prisma model
+const WorkspaceMemberType = builder.prismaObject("WorkspaceMember", {
+  fields: (t) => ({
+    id: t.exposeID("id"),
+    role: t.field({
+      type: WorkspaceMemberRoleEnum,
+      resolve: (member) => member.role,
+    }),
+    status: t.field({
+      type: WorkspaceMemberStatusEnum,
+      resolve: (member) => member.status,
+    }),
+    createdAt: t.string({
+      resolve: (member) => member.createdAt.toISOString(),
+    }),
+    updatedAt: t.string({
+      resolve: (member) => member.updatedAt.toISOString(),
+    }),
+    // Relations
+    user: t.relation("user"),
+    workspace: t.relation("workspace"),
+  }),
+});
 
 // Workspace type from Prisma model
 const WorkspaceType = builder.prismaObject("Workspace", {
@@ -132,13 +173,17 @@ builder.queryField("myWorkspaces", (t) =>
           where: {
             members: {
               some: {
-                id: ctx.user.id,
+                userId: ctx.user.id,
               },
             },
           },
           include: {
             createdBy: true,
-            members: true,
+            members: {
+              include: {
+                user: true,
+              },
+            },
             // TODO: Add projects when Project schema is created
             // projects: true,
           },
@@ -172,7 +217,11 @@ builder.queryField("workspaceBySlug", (t) =>
           where: { slug: args.slug },
           include: {
             createdBy: true,
-            members: true,
+            members: {
+              include: {
+                user: true,
+              },
+            },
             // TODO: Add projects when Project schema is created
             // projects: true,
           },
@@ -184,7 +233,7 @@ builder.queryField("workspaceBySlug", (t) =>
 
         // Check if user is a member
         const isMember = workspace.members.some(
-          (member) => member.id === ctx.user!.id
+          (member) => member.userId === ctx.user!.id
         );
 
         if (!isMember) {
@@ -240,7 +289,7 @@ builder.mutationField("createWorkspace", (t) =>
           counter++;
         }
 
-        // Create workspace with creator as member
+        // Create workspace with creator as admin member
         const workspace = await ctx.prisma.workspace.create({
           data: {
             name: name.trim(),
@@ -249,12 +298,20 @@ builder.mutationField("createWorkspace", (t) =>
             color: color || "#f1594a", // Default accent color
             createdById: ctx.user.id,
             members: {
-              connect: { id: ctx.user.id }, // Add creator as member
+              create: {
+                userId: ctx.user.id,
+                role: "ADMIN",
+                status: "ACTIVE",
+              },
             },
           },
           include: {
             createdBy: true,
-            members: true,
+            members: {
+              include: {
+                user: true,
+              },
+            },
             // TODO: Add projects when Project schema is created
             // projects: true,
           },
@@ -301,7 +358,7 @@ builder.mutationField("updateWorkspace", (t) =>
         }
 
         const isMember = existingWorkspace.members.some(
-          (member) => member.id === ctx.user!.id
+          (member) => member.userId === ctx.user!.id
         );
 
         if (!isMember) {
@@ -352,7 +409,11 @@ builder.mutationField("updateWorkspace", (t) =>
           data: updateData,
           include: {
             createdBy: true,
-            members: true,
+            members: {
+              include: {
+                user: true,
+              },
+            },
             // TODO: Add projects when Project schema is created
             // projects: true,
           },
@@ -408,6 +469,259 @@ builder.mutationField("deleteWorkspace", (t) =>
         return success("Workspace deleted successfully");
       } catch (error: any) {
         return fail("Failed to delete workspace", [error.message]);
+      }
+    },
+  })
+);
+
+// ==================== MEMBER MANAGEMENT MUTATIONS ====================
+
+// Add member to workspace
+builder.mutationField("addWorkspaceMember", (t) =>
+  t.field({
+    type: WorkspacePayload,
+    args: {
+      workspaceId: t.arg.string({ required: true }),
+      userId: t.arg.string({ required: true }),
+      role: t.arg.string({ required: false }),
+    },
+    resolve: async (_, args, ctx) => {
+      try {
+        if (!ctx.user) {
+          return fail("Not authenticated");
+        }
+
+        const { workspaceId, userId, role } = args;
+
+        // Check if workspace exists
+        const workspace = await ctx.prisma.workspace.findUnique({
+          where: { id: workspaceId },
+          include: {
+            members: true,
+            createdBy: true,
+          },
+        });
+
+        if (!workspace) {
+          return fail("Workspace not found");
+        }
+
+        // Check if current user is admin or creator
+        const currentMember = workspace.members.find(
+          (m) => m.userId === ctx.user!.id
+        );
+        if (!currentMember || currentMember.role !== "ADMIN") {
+          return fail(
+            "Access denied: Only admins can add members to this workspace"
+          );
+        }
+
+        // Check if user exists
+        const targetUser = await ctx.prisma.user.findUnique({
+          where: { id: userId },
+        });
+
+        if (!targetUser) {
+          return fail("User not found");
+        }
+
+        // Check if user is already a member
+        const existingMember = workspace.members.find(
+          (m) => m.userId === userId
+        );
+        if (existingMember) {
+          return fail("User is already a member of this workspace");
+        }
+
+        // Add member with specified role or default to VIEWER
+        const validRole = ["ADMIN", "EDITOR", "VIEWER"].includes(role || "")
+          ? (role as "ADMIN" | "EDITOR" | "VIEWER")
+          : ("VIEWER" as const);
+
+        await ctx.prisma.workspaceMember.create({
+          data: {
+            userId,
+            workspaceId,
+            role: validRole,
+            status: "INVITED",
+          },
+        });
+
+        // Fetch updated workspace
+        const updatedWorkspace = await ctx.prisma.workspace.findUnique({
+          where: { id: workspaceId },
+          include: {
+            createdBy: true,
+            members: {
+              include: {
+                user: true,
+              },
+            },
+          },
+        });
+
+        return success("Member added successfully", {
+          workspace: updatedWorkspace,
+        });
+      } catch (error: any) {
+        return fail("Failed to add member", [error.message]);
+      }
+    },
+  })
+);
+
+// Remove member from workspace
+builder.mutationField("removeWorkspaceMember", (t) =>
+  t.field({
+    type: WorkspacePayload,
+    args: {
+      workspaceId: t.arg.string({ required: true }),
+      userId: t.arg.string({ required: true }),
+    },
+    resolve: async (_, args, ctx) => {
+      try {
+        if (!ctx.user) {
+          return fail("Not authenticated");
+        }
+
+        const { workspaceId, userId } = args;
+
+        // Check if workspace exists
+        const workspace = await ctx.prisma.workspace.findUnique({
+          where: { id: workspaceId },
+          include: {
+            members: true,
+            createdBy: true,
+          },
+        });
+
+        if (!workspace) {
+          return fail("Workspace not found");
+        }
+
+        // Check if current user is admin or creator
+        const currentMember = workspace.members.find(
+          (m) => m.userId === ctx.user!.id
+        );
+        if (!currentMember || currentMember.role !== "ADMIN") {
+          return fail(
+            "Access denied: Only admins can remove members from this workspace"
+          );
+        }
+
+        // Can't remove the creator
+        if (workspace.createdById === userId) {
+          return fail("Cannot remove the workspace creator");
+        }
+
+        // Remove the member
+        await ctx.prisma.workspaceMember.deleteMany({
+          where: {
+            userId,
+            workspaceId,
+          },
+        });
+
+        // Fetch updated workspace
+        const updatedWorkspace = await ctx.prisma.workspace.findUnique({
+          where: { id: workspaceId },
+          include: {
+            createdBy: true,
+            members: {
+              include: {
+                user: true,
+              },
+            },
+          },
+        });
+
+        return success("Member removed successfully", {
+          workspace: updatedWorkspace,
+        });
+      } catch (error: any) {
+        return fail("Failed to remove member", [error.message]);
+      }
+    },
+  })
+);
+
+// Update member role
+builder.mutationField("updateWorkspaceMemberRole", (t) =>
+  t.field({
+    type: WorkspacePayload,
+    args: {
+      workspaceId: t.arg.string({ required: true }),
+      userId: t.arg.string({ required: true }),
+      role: t.arg.string({ required: true }),
+    },
+    resolve: async (_, args, ctx) => {
+      try {
+        if (!ctx.user) {
+          return fail("Not authenticated");
+        }
+
+        const { workspaceId, userId, role } = args;
+
+        // Validate role
+        if (!["ADMIN", "EDITOR", "VIEWER"].includes(role)) {
+          return fail("Invalid role", ["VALIDATION_ERROR"]);
+        }
+
+        // Check if workspace exists
+        const workspace = await ctx.prisma.workspace.findUnique({
+          where: { id: workspaceId },
+          include: {
+            members: true,
+            createdBy: true,
+          },
+        });
+
+        if (!workspace) {
+          return fail("Workspace not found");
+        }
+
+        // Check if current user is admin
+        const currentMember = workspace.members.find(
+          (m) => m.userId === ctx.user!.id
+        );
+        if (!currentMember || currentMember.role !== "ADMIN") {
+          return fail("Access denied: Only admins can update member roles");
+        }
+
+        // Can't change the creator's role
+        if (workspace.createdById === userId) {
+          return fail("Cannot change the workspace creator's role");
+        }
+
+        // Update member role
+        await ctx.prisma.workspaceMember.updateMany({
+          where: {
+            userId,
+            workspaceId,
+          },
+          data: {
+            role: role as "ADMIN" | "EDITOR" | "VIEWER",
+          },
+        });
+
+        // Fetch updated workspace
+        const updatedWorkspace = await ctx.prisma.workspace.findUnique({
+          where: { id: workspaceId },
+          include: {
+            createdBy: true,
+            members: {
+              include: {
+                user: true,
+              },
+            },
+          },
+        });
+
+        return success("Member role updated successfully", {
+          workspace: updatedWorkspace,
+        });
+      } catch (error: any) {
+        return fail("Failed to update member role", [error.message]);
       }
     },
   })

@@ -1,6 +1,7 @@
 import { prisma } from "../db/prisma.js";
 import bcrypt from "bcrypt";
 import { randomBytes } from "crypto";
+import { getRandomColorName } from "../lib/image-color.js";
 
 /**
  * Simple Better Auth-style implementation
@@ -12,7 +13,8 @@ const SALT_ROUNDS = 10;
 export interface RegisterInput {
   email: string;
   password: string;
-  name?: string;
+  firstName?: string;
+  lastName?: string;
 }
 
 export interface LoginInput {
@@ -24,7 +26,7 @@ export interface LoginInput {
  * Register a new user
  */
 export async function register(input: RegisterInput) {
-  const { email, password, name } = input;
+  const { email, password, firstName, lastName } = input;
 
   // Check if user already exists
   const existingUser = await prisma.user.findUnique({
@@ -42,8 +44,11 @@ export async function register(input: RegisterInput) {
   const user = await prisma.user.create({
     data: {
       email,
-      name,
+      username: email,
+      firstName,
+      lastName,
       emailVerified: false,
+      color: getRandomColorName(),
       accounts: {
         create: {
           type: "credentials",

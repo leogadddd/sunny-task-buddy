@@ -2,40 +2,18 @@ import { apolloClient } from "@/lib/apollo/client";
 import {
   MY_WORKSPACES_QUERY,
   WORKSPACE_BY_SLUG_QUERY,
+  SEARCH_USERS_QUERY,
 } from "@/lib/apollo/queries";
 import {
   CREATE_WORKSPACE_MUTATION,
   UPDATE_WORKSPACE_MUTATION,
   DELETE_WORKSPACE_MUTATION,
+  ADD_WORKSPACE_MEMBER_MUTATION,
+  UPDATE_WORKSPACE_MEMBER_ROLE_MUTATION,
+  REMOVE_WORKSPACE_MEMBER_MUTATION,
 } from "@/lib/apollo/mutations";
-
-export interface WorkspaceMember {
-  id: string;
-  name?: string;
-  email: string;
-}
-
-export interface Workspace {
-  id: string;
-  name: string;
-  slug: string;
-  description?: string;
-  color: string;
-  status: string;
-  createdAt: string;
-  updatedAt: string;
-  createdBy: {
-    id: string;
-    name?: string;
-    email: string;
-  };
-  members: WorkspaceMember[];
-  projects?: Array<{
-    id: string;
-    name: string;
-    slug: string;
-  }>;
-}
+import { Workspace } from "@/interfaces/workspace";
+import { User } from "@/interfaces/users";
 
 export interface CreateWorkspaceInput {
   name: string;
@@ -182,5 +160,129 @@ export const workspaceApi = {
         "Failed to delete workspace";
       throw new Error(errorMsg);
     }
+  },
+
+  async addMember(
+    workspaceId: string,
+    userId: string,
+    role: "ADMIN" | "EDITOR" | "VIEWER" = "VIEWER"
+  ): Promise<Workspace> {
+    const result = await apolloClient.mutate({
+      mutation: ADD_WORKSPACE_MEMBER_MUTATION,
+      variables: {
+        workspaceId,
+        userId,
+        role,
+      },
+    });
+
+    // Check for GraphQL errors
+    if (result.errors && result.errors.length > 0) {
+      throw new Error(result.errors[0].message);
+    }
+
+    const response = result.data.addWorkspaceMember;
+
+    if (!response.success) {
+      const errorMsg =
+        response.errors?.[0] || response.message || "Failed to add member";
+      throw new Error(errorMsg);
+    }
+
+    if (!response.data?.workspace) {
+      throw new Error("Failed to add member");
+    }
+
+    return response.data.workspace;
+  },
+
+  async updateMemberRole(
+    workspaceId: string,
+    userId: string,
+    role: "ADMIN" | "EDITOR" | "VIEWER"
+  ): Promise<Workspace> {
+    const result = await apolloClient.mutate({
+      mutation: UPDATE_WORKSPACE_MEMBER_ROLE_MUTATION,
+      variables: {
+        workspaceId,
+        userId,
+        role,
+      },
+    });
+
+    // Check for GraphQL errors
+    if (result.errors && result.errors.length > 0) {
+      throw new Error(result.errors[0].message);
+    }
+
+    const response = result.data.updateWorkspaceMemberRole;
+
+    if (!response.success) {
+      const errorMsg =
+        response.errors?.[0] ||
+        response.message ||
+        "Failed to update member role";
+      throw new Error(errorMsg);
+    }
+
+    if (!response.data?.workspace) {
+      throw new Error("Failed to update member role");
+    }
+
+    return response.data.workspace;
+  },
+
+  async removeMember(workspaceId: string, userId: string): Promise<Workspace> {
+    const result = await apolloClient.mutate({
+      mutation: REMOVE_WORKSPACE_MEMBER_MUTATION,
+      variables: {
+        workspaceId,
+        userId,
+      },
+    });
+
+    // Check for GraphQL errors
+    if (result.errors && result.errors.length > 0) {
+      throw new Error(result.errors[0].message);
+    }
+
+    const response = result.data.removeWorkspaceMember;
+
+    if (!response.success) {
+      const errorMsg =
+        response.errors?.[0] || response.message || "Failed to remove member";
+      throw new Error(errorMsg);
+    }
+
+    if (!response.data?.workspace) {
+      throw new Error("Failed to remove member");
+    }
+
+    return response.data.workspace;
+  },
+};
+
+export const userApi = {
+  async searchUsers(
+    query: string,
+    workspaceId?: string,
+    limit?: number
+  ): Promise<User[]> {
+    const result = await apolloClient.query({
+      query: SEARCH_USERS_QUERY,
+      variables: {
+        query,
+        workspaceId,
+        limit: limit || 10,
+      },
+      fetchPolicy: "no-cache",
+    });
+
+    // Check for GraphQL errors
+    if (result.errors && result.errors.length > 0) {
+      throw new Error(result.errors[0].message);
+    }
+
+    return result.data.searchUsers || [];
   },
 };

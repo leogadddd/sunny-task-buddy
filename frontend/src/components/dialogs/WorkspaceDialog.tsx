@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -24,6 +24,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { useWorkspaceStore } from "@/stores/workspace.store";
 import { WorkspaceIcon } from "../workspace-sidebar/WorkspaceIcon";
 import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
+import { Workspace } from "@/interfaces/workspace";
 
 const createWorkspaceSchema = z.object({
   name: z
@@ -47,52 +49,108 @@ const colorOptions = [
   "#f97316", // orange
 ];
 
-interface CreateWorkspaceDialogProps {
+interface WorkspaceDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  workspace?: Workspace | null;
 }
 
-export function CreateWorkspaceDialog({
+export function WorkspaceDialog({
   open,
   onOpenChange,
-}: CreateWorkspaceDialogProps) {
-  const { createWorkspace, isLoading } = useWorkspaceStore();
+  workspace,
+}: WorkspaceDialogProps) {
+  const { createWorkspace, updateWorkspace, isLoading, setCurrentWorkspace } =
+    useWorkspaceStore();
+  const navigate = useNavigate();
+
+  const isEdit = !!workspace;
+
+  useEffect(() => {
+    if (workspace) {
+      form.reset({
+        name: workspace.name,
+        description: workspace.description || "",
+        color: workspace.color,
+      });
+    } else {
+      form.reset({
+        name: "",
+        description: "",
+        color: colorOptions[0],
+      });
+    }
+  }, [workspace]);
 
   const form = useForm<CreateWorkspaceForm>({
     resolver: zodResolver(createWorkspaceSchema),
     defaultValues: {
-      name: "",
-      description: "",
-      color: "#f1594a",
+      name: workspace?.name || "",
+      description: workspace?.description || "",
+      color: workspace?.color || colorOptions[0],
     },
   });
+
+  useEffect(() => {
+    if (workspace) {
+      form.reset({
+        name: workspace.name,
+        description: workspace.description || "",
+        color: workspace.color,
+      });
+    } else {
+      form.reset({
+        name: "",
+        description: "",
+        color: colorOptions[0],
+      });
+    }
+  }, [workspace, form]);
 
   const watchedName = form.watch("name");
   const watchedColor = form.watch("color");
 
   const onSubmit = async (data: CreateWorkspaceForm) => {
     try {
-      await createWorkspace({
-        name: data.name,
-        description: data.description,
-        color: data.color,
-      });
-      // Success toast is handled in the store
-      form.reset();
-      onOpenChange(false);
+      if (isEdit && workspace) {
+        await updateWorkspace(workspace.id, {
+          name: data.name,
+          description: data.description,
+          color: data.color,
+        });
+        // Success toast is handled in the store
+        form.reset();
+        onOpenChange(false);
+      } else {
+        const newWorkspace = await createWorkspace({
+          name: data.name,
+          description: data.description,
+          color: data.color,
+        });
+        setCurrentWorkspace(newWorkspace);
+        // Success toast is handled in the store
+        form.reset();
+        onOpenChange(false);
+      }
     } catch (error) {
       // Error toast is handled in the store
-      console.error("Failed to create workspace:", error);
+      console.error(
+        `Failed to ${isEdit ? "update" : "create"} workspace:`,
+        error
+      );
     }
   };
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[450px]">
         <DialogHeader>
-          <DialogTitle>Create Workspace</DialogTitle>
+          <DialogTitle>
+            {isEdit ? "Edit Workspace" : "Create Workspace"}
+          </DialogTitle>
           <DialogDescription>
-            Create a new workspace to manage your projects and tasks.
+            {isEdit
+              ? "Update your workspace details."
+              : "Create a new workspace to manage your projects and tasks."}
           </DialogDescription>
         </DialogHeader>
 
@@ -185,7 +243,13 @@ export function CreateWorkspaceDialog({
               </Button>
               <Button type="submit" disabled={isLoading}>
                 <span className="">
-                  {isLoading ? "Creating..." : "Create Workspace"}
+                  {isLoading
+                    ? isEdit
+                      ? "Updating..."
+                      : "Creating..."
+                    : isEdit
+                    ? "Update Workspace"
+                    : "Create Workspace"}
                 </span>
               </Button>
             </DialogFooter>

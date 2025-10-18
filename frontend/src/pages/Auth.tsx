@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useMutation } from "@apollo/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,21 +12,25 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { LOGIN_MUTATION, REGISTER_MUTATION } from "@/lib/apollo/queries";
 import { useAuth } from "@/hooks/useAuth";
 import { Loader2 } from "lucide-react";
+import { apolloClient } from "@/lib/apollo/client";
 
 export default function Auth() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { isAuthenticated, isLoading: authLoading } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [fullName, setFullName] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+
+  const redirectTo = searchParams.get("redirect") || "/dashboard";
 
   // GraphQL Mutations
   const [loginMutation] = useMutation(LOGIN_MUTATION);
@@ -35,9 +39,9 @@ export default function Auth() {
   useEffect(() => {
     // Check if user is already logged in
     if (isAuthenticated && !authLoading) {
-      navigate("/dashboard");
+      navigate(redirectTo);
     }
-  }, [isAuthenticated, authLoading, navigate]);
+  }, [isAuthenticated, authLoading, navigate, redirectTo]);
 
   if (authLoading) {
     return (
@@ -52,13 +56,22 @@ export default function Auth() {
     setIsLoading(true);
 
     try {
-      const { data } = await registerMutation({
+      const registerPromise = registerMutation({
         variables: {
           email,
           password,
-          name: fullName,
+          firstName: firstName.trim() || null,
+          lastName: lastName.trim() || null,
         },
       });
+
+      toast.promise(registerPromise, {
+        loading: "Creating your account...",
+        success: "Account created successfully!",
+        error: "Failed to create account",
+      });
+
+      const { data } = await registerPromise;
 
       const result = data?.register;
 
@@ -69,28 +82,64 @@ export default function Auth() {
         return;
       }
 
-      toast.success(result.message || "Account created successfully!");
-
       // Clear form
       setEmail("");
       setPassword("");
-      setFullName("");
+      setFirstName("");
+      setLastName("");
 
-      // Auto-login after registration
-      setTimeout(() => {
-        handleSignIn(e);
-      }, 500);
-    } catch (error: any) {
+      // Auto-login immediately after registration by awaiting the login mutation
+      try {
+        const loginPromise = loginMutation({
+          variables: { email, password },
+        });
+
+        toast.promise(loginPromise, {
+          loading: "Logging you in...",
+          success: "Logged in successfully!",
+          error: "Auto-login failed after registration",
+        });
+
+        const { data: loginData } = await loginPromise;
+
+        const loginResult = loginData?.login;
+
+        if (!loginResult?.success) {
+          toast.error(
+            loginResult?.message || "Auto-login failed after registration"
+          );
+          return;
+        }
+
+        // Server will set HttpOnly session cookie. Clear client cache so authenticated queries refetch.
+        try {
+          await apolloClient.clearStore();
+        } catch (e) {
+          console.warn("Failed to reset Apollo cache after login", e);
+        }
+
+        toast.success(loginResult.message || "Welcome!");
+        navigate(redirectTo);
+        return;
+      } catch (err: unknown) {
+        console.error("Auto-login failed", err);
+        toast.error("Auto-login failed", {
+          description: err instanceof Error ? err.message : "Unknown error",
+        });
+      }
+    } catch (error: unknown) {
       toast.error("Failed to create account", {
-        description: error.message,
+        description: error instanceof Error ? error.message : "Unknown error",
       });
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleSignIn = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSignIn = async (e?: React.FormEvent) => {
+    // If called from a form submit, prevent default. When called programmatically
+    // (e.g. after signup) we won't have an event.
+    if (e) e.preventDefault();
     setIsLoading(true);
 
     try {
@@ -110,20 +159,20 @@ export default function Auth() {
         return;
       }
 
-      // Store session token
-      if (result.data?.sessionToken) {
-        localStorage.setItem("sessionToken", result.data.sessionToken);
+      // Server sets HttpOnly cookie for session. Reset Apollo cache so authenticated queries refetch
+      try {
+        await apolloClient.clearStore();
+      } catch (e) {
+        console.warn("Failed to reset Apollo cache after login", e);
       }
 
       toast.success(result.message || "Welcome back!");
 
       // Navigate to dashboard
-      setTimeout(() => {
-        navigate("/dashboard");
-      }, 100);
-    } catch (error: any) {
+      navigate(redirectTo);
+    } catch (error: unknown) {
       toast.error("Failed to sign in", {
-        description: error.message,
+        description: error instanceof Error ? error.message : "Unknown error",
       });
     } finally {
       setIsLoading(false);
@@ -187,16 +236,29 @@ export default function Auth() {
 
               <TabsContent value="signup">
                 <form onSubmit={handleSignUp} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-name">Full Name</Label>
-                    <Input
-                      id="signup-name"
-                      type="text"
-                      placeholder="John Doe"
-                      value={fullName}
-                      onChange={(e) => setFullName(e.target.value)}
-                      required
-                    />
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="signup-firstname">First Name</Label>
+                      <Input
+                        id="signup-firstname"
+                        type="text"
+                        placeholder="John"
+                        value={firstName}
+                        onChange={(e) => setFirstName(e.target.value)}
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="signup-lastname">Last Name</Label>
+                      <Input
+                        id="signup-lastname"
+                        type="text"
+                        placeholder="Doe"
+                        value={lastName}
+                        onChange={(e) => setLastName(e.target.value)}
+                        required
+                      />
+                    </div>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="signup-email">Email</Label>

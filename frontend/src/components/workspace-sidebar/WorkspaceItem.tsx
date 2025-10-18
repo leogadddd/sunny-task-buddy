@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { WorkspaceIcon } from "./WorkspaceIcon";
 import {
   Popover,
@@ -7,8 +7,9 @@ import {
 } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { Workspace } from "@/api/workspace.api";
+import { Workspace } from "@/interfaces/workspace";
 import { useNavigate } from "react-router-dom";
+import { WorkspaceDialog } from "../dialogs/WorkspaceDialog";
 
 interface WorkspaceItemProps {
   workspace: Workspace;
@@ -24,8 +25,9 @@ export function WorkspaceItem({
   onDelete,
 }: WorkspaceItemProps) {
   const navigate = useNavigate();
-  const [isPopoverOpen, setIsPopoverOpen] = React.useState(false);
-  const [isRightClick, setIsRightClick] = React.useState(false);
+  const [isPopoverOpen, setIsPopoverOpen] = useState(false);
+  const [isRightClick, setIsRightClick] = useState(false);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   const handleRightClick = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -54,38 +56,77 @@ export function WorkspaceItem({
   };
 
   return (
-    <Popover open={isPopoverOpen} onOpenChange={handlePopoverOpenChange}>
-      <PopoverTrigger asChild>
-        <button
-          onClick={handleClick}
-          onContextMenu={handleRightClick}
-          className={`transition-all ${
-            isCurrent
-              ? "ring-offset-2 ring-offset-gray-800 rounded-2xl scale-100"
-              : "hover:scale-100 hover:rounded-2xl rounded-lg opacity-70 scale-90"
-          }`}
-          title={workspace.name}
-        >
-          <WorkspaceIcon
-            size="md"
-            name={workspace.name}
-            color={workspace.color}
-          />
-        </button>
-      </PopoverTrigger>
-      <PopoverContent side="right" align="start" className="w-48">
-        <div className="space-y-2">
-          <h4 className="font-medium">{workspace.name}</h4>
-          <Button
-            variant="destructive"
-            size="sm"
-            className="w-full"
-            onClick={handleDelete}
+    <>
+      <Popover open={isPopoverOpen} onOpenChange={handlePopoverOpenChange}>
+        <PopoverTrigger asChild>
+          <button
+            onClick={handleClick}
+            onContextMenu={handleRightClick}
+            className={`transition-all border ${
+              isCurrent
+                ? "ring-offset-2 ring-offset-gray-800 rounded-2xl scale-100"
+                : "rounded-lg opacity-70"
+            }`}
+            title={workspace.name}
           >
-            Delete Workspace
-          </Button>
-        </div>
-      </PopoverContent>
-    </Popover>
+            <WorkspaceIcon
+              size="md"
+              name={workspace.name}
+              color={workspace.color}
+            />
+          </button>
+        </PopoverTrigger>
+        <PopoverContent
+          side="right"
+          align="start"
+          className="min-w-48 ml-3 p-2"
+        >
+          <div className="space-y-2">
+            <div className="flex items-center space-x-3 pb-2">
+              <WorkspaceIcon
+                size="sm"
+                name={workspace.name}
+                color={workspace.color}
+              />
+              <div className="flex flex-col">
+                <p className="font-medium">{workspace.name}</p>
+                <span className="text-muted-foreground text-xs">
+                  {workspace.members.length} member
+                  {workspace.members.length !== 1 ? "s" : ""}
+                </span>
+              </div>
+            </div>
+            <div>
+              <Button
+                variant="secondary"
+                size="sm"
+                className="w-full rounded-lg mb-2"
+                onClick={() => {
+                  setIsPopoverOpen(false);
+                  setIsDialogOpen(true);
+                }}
+              >
+                Edit Workspace
+              </Button>
+            </div>
+            <div>
+              <Button
+                variant="destructive"
+                size="sm"
+                className="w-full rounded-lg"
+                onClick={handleDelete}
+              >
+                Delete Workspace
+              </Button>
+            </div>
+          </div>
+        </PopoverContent>
+      </Popover>
+      <WorkspaceDialog
+        open={isDialogOpen}
+        onOpenChange={setIsDialogOpen}
+        workspace={workspace}
+      />
+    </>
   );
 }
