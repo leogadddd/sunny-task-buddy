@@ -20,6 +20,7 @@ import { WorkspaceIcon } from "@/components/workspace-sidebar/WorkspaceIcon";
 import { useLoading } from "@/hooks/useLoading";
 import { DashboardCard } from "@/components/dashboard/DashboardCard";
 import ProjectsList from "@/components/workspace/ProjectsList";
+import { InvitationModal } from "@/components/dialogs/InvitationModal";
 
 export default function Workspace() {
   const params = useParams();
@@ -30,6 +31,7 @@ export default function Workspace() {
   const [workspace, setWorkspace] = useState<WorkspaceType | null>(null);
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showInvitationModal, setShowInvitationModal] = useState(false);
 
   useEffect(() => {
     const fetchWorkspace = async () => {
@@ -46,14 +48,27 @@ export default function Workspace() {
 
         if (ws) {
           setWorkspace(ws);
-          // Check if current user is a member
-          const isMember = ws.members.some(
+          // Check user membership status
+          const userMember = ws.members.find(
             (member) => member.user.id === user?.id
           );
-          setIsAuthorized(isMember);
+          if (userMember) {
+            if (userMember.status === "ACTIVE") {
+              setIsAuthorized(true);
+              setShowInvitationModal(false);
+            } else if (userMember.status === "INVITED") {
+              setIsAuthorized(false);
+              setShowInvitationModal(true);
+              // console.log("User is invited to the workspace");
+            }
+          } else {
+            setIsAuthorized(false);
+            setShowInvitationModal(false);
+          }
           setCurrentWorkspace(ws);
         } else {
           setIsAuthorized(false);
+          setShowInvitationModal(false);
         }
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } catch (error: any) {
@@ -90,15 +105,39 @@ export default function Workspace() {
   useEffect(() => {
     if (currentWorkspace && currentWorkspace.slug === params.slug) {
       setWorkspace(currentWorkspace);
-      const isMember = currentWorkspace.members.some(
+      const userMember = currentWorkspace.members.find(
         (member) => member.user.id === user?.id
       );
-      setIsAuthorized(isMember);
+      if (userMember) {
+        if (userMember.status === "ACTIVE") {
+          setIsAuthorized(true);
+          setShowInvitationModal(false);
+        } else if (userMember.status === "INVITED") {
+          setIsAuthorized(false);
+          setShowInvitationModal(true);
+        }
+      } else {
+        setIsAuthorized(false);
+        setShowInvitationModal(false);
+      }
     }
   }, [currentWorkspace, params.slug, user?.id]);
 
+  const handleAcceptInvitation = () => {
+    // TODO: Call mutation to accept invitation
+    // For mock-up, simulate acceptance
+    setIsAuthorized(true);
+    setShowInvitationModal(false);
+  };
+
+  const handleDeclineInvitation = () => {
+    // TODO: Call mutation to decline invitation
+    // For mock-up, just close modal
+    setShowInvitationModal(false);
+  };
+
   if (isLoading) {
-    return null; // Loading handled globally
+    return <div className="container mx-auto py-8">Loading workspace...</div>;
   }
 
   if (error) {
@@ -115,67 +154,82 @@ export default function Workspace() {
     );
   }
 
-  if (!isAuthorized) {
+  if (!isAuthorized && !showInvitationModal) {
     return null;
   }
 
   return (
-    <div className="container mx-auto py-8">
-      <div className="flex justify-between items-center mb-8">
-        <div className="flex items-center space-x-4">
-          <WorkspaceIcon
-            name={workspace?.name}
-            color={workspace?.color}
-            size="lg"
-          />
-          <div>
-            <h1 className="text-3xl font-bold">{workspace?.name}</h1>
-            {workspace?.description && (
-              <p className="text-muted-foreground">{workspace.description}</p>
-            )}
+    <>
+      <InvitationModal
+        open={showInvitationModal}
+        onOpenChange={setShowInvitationModal}
+        workspace={workspace}
+        onAccept={handleAcceptInvitation}
+        onDecline={handleDeclineInvitation}
+      />
+      {isAuthorized && (
+        <div className="container mx-auto py-8">
+          <div className="flex justify-between items-center mb-8">
+            <div className="flex items-center space-x-4">
+              <WorkspaceIcon
+                name={workspace?.name}
+                color={workspace?.color}
+                size="lg"
+              />
+              <div>
+                <h1 className="text-3xl font-bold">{workspace?.name}</h1>
+                {workspace?.description && (
+                  <p className="text-muted-foreground">
+                    {workspace.description}
+                  </p>
+                )}
+              </div>
+            </div>
+            <div className="flex items-center space-x-4">
+              <MembersList />
+            </div>
+          </div>
+
+          {}
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <DashboardCard
+              title="Completion Rate"
+              value="68%"
+              description="+2.5% from last week"
+              icon={CheckCircle2}
+              iconColor="text-emerald-500"
+            />
+
+            <DashboardCard
+              title="Projects"
+              value="12"
+              description="4 active projects"
+              icon={Folder}
+              iconColor="text-blue-500"
+            />
+
+            <DashboardCard
+              title="Tasks"
+              value="48"
+              description="24 in progress"
+              icon={ListTodo}
+              iconColor="text-amber-500"
+            />
+
+            <DashboardCard
+              title="Backlogs"
+              value="16"
+              description="Pending items"
+              icon={Archive}
+              iconColor="text-purple-500"
+            />
+          </div>
+          <div className="mt-12 mb-12">
+            <ProjectsList />
           </div>
         </div>
-        <div className="flex items-center space-x-4">
-          <MembersList />
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <DashboardCard
-          title="Completion Rate"
-          value="68%"
-          description="+2.5% from last week"
-          icon={CheckCircle2}
-          iconColor="text-emerald-500"
-        />
-
-        <DashboardCard
-          title="Projects"
-          value="12"
-          description="4 active projects"
-          icon={Folder}
-          iconColor="text-blue-500"
-        />
-
-        <DashboardCard
-          title="Tasks"
-          value="48"
-          description="24 in progress"
-          icon={ListTodo}
-          iconColor="text-amber-500"
-        />
-
-        <DashboardCard
-          title="Backlogs"
-          value="16"
-          description="Pending items"
-          icon={Archive}
-          iconColor="text-purple-500"
-        />
-      </div>
-      <div className="mt-12 mb-12">
-        <ProjectsList />
-      </div>
-    </div>
+      )}
+    </>
   );
 }

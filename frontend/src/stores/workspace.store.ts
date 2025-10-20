@@ -28,7 +28,11 @@ interface WorkspaceState {
     userId: string,
     role: "ADMIN" | "EDITOR" | "VIEWER"
   ) => Promise<void>;
-  removeMember: (workspaceId: string, userId: string) => Promise<void>;
+  removeMember: (
+    workspaceId: string,
+    userId: string,
+    isRemovingSelf?: boolean
+  ) => Promise<void>;
   setCurrentWorkspace: (workspace: Workspace | null) => void;
   getWorkspaceBySlug: (slug: string) => Promise<Workspace | null>;
   clearError: () => void;
@@ -289,15 +293,23 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
     }
   },
 
-  removeMember: async (workspaceId: string, userId: string) => {
+  removeMember: async (
+    workspaceId: string,
+    userId: string,
+    isRemovingSelf = false
+  ) => {
     set({ isLoading: true, error: null });
     try {
       const removePromise = workspaceApi.removeMember(workspaceId, userId);
 
       toast.promise(removePromise, {
-        loading: "Removing member...",
-        success: "Member removed successfully",
-        error: "Failed to remove member",
+        loading: isRemovingSelf ? "Leaving workspace..." : "Removing member...",
+        success: isRemovingSelf
+          ? "You have left the workspace"
+          : "Member removed successfully",
+        error: isRemovingSelf
+          ? "Failed to leave workspace"
+          : "Failed to remove member",
       });
 
       const updatedWorkspace = await removePromise;
@@ -322,7 +334,6 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
         error: errorMessage,
         isLoading: false,
       });
-      // Don't show error toast here since toast.promise handles it
       throw error;
     }
   },

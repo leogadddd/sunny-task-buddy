@@ -10,6 +10,8 @@ import { toast } from "sonner";
 import { Workspace } from "@/interfaces/workspace";
 import { useNavigate } from "react-router-dom";
 import { WorkspaceDialog } from "../dialogs/WorkspaceDialog";
+import { useAuth } from "@/hooks/useAuth";
+import WorkspaceContextMenu from "./WorkspaceIconContextMenu";
 
 interface WorkspaceItemProps {
   workspace: Workspace;
@@ -24,6 +26,7 @@ export function WorkspaceItem({
   onSelect,
   onDelete,
 }: WorkspaceItemProps) {
+  const { user } = useAuth();
   const navigate = useNavigate();
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
   const [isRightClick, setIsRightClick] = useState(false);
@@ -76,50 +79,23 @@ export function WorkspaceItem({
             />
           </button>
         </PopoverTrigger>
-        <PopoverContent
-          side="right"
-          align="start"
-          className="min-w-48 ml-3 p-2"
-        >
-          <div className="space-y-2">
-            <div className="flex items-center space-x-3 pb-2">
+        <PopoverContent side="right" align="start" className="min-w-48 ml-3">
+          <div>
+            <div className="flex gap-3 items-center p-2 py-3 border-b">
               <WorkspaceIcon
                 size="sm"
                 name={workspace.name}
                 color={workspace.color}
               />
-              <div className="flex flex-col">
-                <p className="font-medium">{workspace.name}</p>
-                <span className="text-muted-foreground text-xs">
-                  {workspace.members.length} member
-                  {workspace.members.length !== 1 ? "s" : ""}
-                </span>
-              </div>
-            </div>
-            <div>
-              <Button
-                variant="secondary"
-                size="sm"
-                className="w-full rounded-lg mb-2"
-                onClick={() => {
-                  setIsPopoverOpen(false);
-                  setIsDialogOpen(true);
-                }}
-              >
-                Edit Workspace
-              </Button>
-            </div>
-            <div>
-              <Button
-                variant="destructive"
-                size="sm"
-                className="w-full rounded-lg"
-                onClick={handleDelete}
-              >
-                Delete Workspace
-              </Button>
+              <h3 className="font-semibold text-lg">{workspace.name}</h3>
             </div>
           </div>
+          <WorkspaceContextMenu
+            workspace={workspace}
+            User={user}
+            onAction={() => setIsPopoverOpen(false)}
+            onEdit={() => setIsDialogOpen(true)}
+          />
         </PopoverContent>
       </Popover>
       <WorkspaceDialog

@@ -1,3 +1,4 @@
+import { Project } from "./project";
 import { User } from "./users";
 
 export interface WorkspaceMember {
@@ -18,11 +19,7 @@ export interface Workspace {
   updatedAt: string;
   createdBy: User;
   members: WorkspaceMember[];
-  projects?: Array<{
-    id: string;
-    name: string;
-    slug: string;
-  }>;
+  projects?: Project[];
 }
 
 export interface CreateWorkspaceInput {

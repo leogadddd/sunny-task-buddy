@@ -122,3 +122,12 @@ export const ADD_WORKSPACE_MEMBER_MUTATION = gql`
   }
   ${WORKSPACE_FRAGMENT}
 `;
+export const ANSWER_WORKSPACE_INVITATION_MUTATION = gql`
+  mutation AnswerWorkspaceInvitation($workspaceId: String!, $accept: Boolean!) {
+    answerWorkspaceInvitation(workspaceId: $workspaceId, accept: $accept) {
+      success
+      message
+      errors
+    }
+  }
+`;

@@ -32,68 +32,7 @@ interface Project {
 }
 
 // Mock data for demonstration
-const mockProjects: Project[] = [
-  {
-    id: "1",
-    title: "Website Redesign",
-    description: "Modernize the company website with new design system",
-    totalTasks: 24,
-    completedTasks: 16,
-    status: "active",
-    dueDate: "2025-11-15",
-    teamMembers: 5,
-  },
-  {
-    id: "2",
-    title: "Mobile App",
-    description: "Build iOS and Android native applications",
-    totalTasks: 42,
-    completedTasks: 18,
-    status: "active",
-    dueDate: "2025-12-30",
-    teamMembers: 8,
-  },
-  {
-    id: "3",
-    title: "API Integration",
-    description: "Integrate third-party payment and analytics APIs",
-    totalTasks: 12,
-    completedTasks: 12,
-    status: "completed",
-    dueDate: "2025-10-10",
-    teamMembers: 2,
-  },
-  {
-    id: "4",
-    title: "Database Migration",
-    description: "Migrate from MySQL to PostgreSQL infrastructure",
-    totalTasks: 18,
-    completedTasks: 8,
-    status: "active",
-    dueDate: "2025-11-30",
-    teamMembers: 3,
-  },
-  {
-    id: "5",
-    title: "Documentation",
-    description: "Complete API and architecture documentation",
-    totalTasks: 15,
-    completedTasks: 6,
-    status: "paused",
-    dueDate: "2025-12-01",
-    teamMembers: 2,
-  },
-  {
-    id: "6",
-    title: "Testing Framework",
-    description: "Implement comprehensive testing and CI/CD pipeline",
-    totalTasks: 20,
-    completedTasks: 14,
-    status: "active",
-    dueDate: "2025-11-20",
-    teamMembers: 4,
-  },
-];
+const mockProjects: Project[] = [];
 
 export default function ProjectsList() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -134,7 +73,7 @@ export default function ProjectsList() {
           </p>
         </div>
 
-        {/* Add member circle */}
+        {/* Add Project Button */}
         <Button className="flex items-center">
           <Plus className="mr-2" />
           New Project
@@ -154,12 +93,12 @@ export default function ProjectsList() {
         </div>
 
         {/* View Toggle */}
-        <div className="flex gap-1 items-center bg-muted rounded-2xl p-1.5 h-12">
+        <div className="flex gap-1 items-center bg-muted rounded-lg p-1.5 h-12">
           <Button
             variant={viewMode === "cards" ? "default" : "ghost"}
             size="sm"
             onClick={() => setViewMode("cards")}
-            className="h-full px-3 rounded-xl rounded-r-sm"
+            className="h-full px-3 rounded-md"
           >
             <Grid3X3 className="h-4 w-4 mr-1" />
             Cards
@@ -168,7 +107,7 @@ export default function ProjectsList() {
             variant={viewMode === "table" ? "default" : "ghost"}
             size="sm"
             onClick={() => setViewMode("table")}
-            className="h-full px-3 rounded-xl rounded-l-sm"
+            className="h-full px-3 rounded-md"
           >
             <Table className="h-4 w-4 mr-1" />
             Table

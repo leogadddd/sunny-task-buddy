@@ -118,18 +118,30 @@ export default function Auth() {
           console.warn("Failed to reset Apollo cache after login", e);
         }
 
-        toast.success(loginResult.message || "Welcome!");
+        // toast.success(loginResult.message || "Welcome!");
         navigate(redirectTo);
         return;
       } catch (err: unknown) {
         console.error("Auto-login failed", err);
+        const errorMessage =
+          err instanceof Error ? err.message : "Unknown error";
+        const displayMessage =
+          errorMessage === "Failed to fetch"
+            ? "Authentication Failed"
+            : errorMessage;
         toast.error("Auto-login failed", {
-          description: err instanceof Error ? err.message : "Unknown error",
+          description: displayMessage,
         });
       }
     } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error";
+      const displayMessage =
+        errorMessage === "Failed to fetch"
+          ? "Authentication Failed"
+          : errorMessage;
       toast.error("Failed to create account", {
-        description: error instanceof Error ? error.message : "Unknown error",
+        description: displayMessage,
       });
     } finally {
       setIsLoading(false);
@@ -171,8 +183,14 @@ export default function Auth() {
       // Navigate to dashboard
       navigate(redirectTo);
     } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error";
+      const displayMessage =
+        errorMessage === "Failed to fetch"
+          ? "Authentication Failed"
+          : errorMessage;
       toast.error("Failed to sign in", {
-        description: error instanceof Error ? error.message : "Unknown error",
+        description: displayMessage,
       });
     } finally {
       setIsLoading(false);

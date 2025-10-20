@@ -75,8 +75,7 @@ const WorkspaceType = builder.prismaObject("Workspace", {
     // Relations
     createdBy: t.relation("createdBy"),
     members: t.relation("members"),
-    // TODO: Uncomment when Project schema is created
-    // projects: t.relation("projects"),
+    projects: t.relation("projects"),
   }),
 });
 
@@ -184,8 +183,7 @@ builder.queryField("myWorkspaces", (t) =>
                 user: true,
               },
             },
-            // TODO: Add projects when Project schema is created
-            // projects: true,
+            projects: true,
           },
           orderBy: {
             createdAt: "desc",
@@ -222,8 +220,7 @@ builder.queryField("workspaceBySlug", (t) =>
                 user: true,
               },
             },
-            // TODO: Add projects when Project schema is created
-            // projects: true,
+            projects: true,
           },
         });
 
@@ -312,8 +309,7 @@ builder.mutationField("createWorkspace", (t) =>
                 user: true,
               },
             },
-            // TODO: Add projects when Project schema is created
-            // projects: true,
+            projects: true,
           },
         });
 
@@ -414,8 +410,7 @@ builder.mutationField("updateWorkspace", (t) =>
                 user: true,
               },
             },
-            // TODO: Add projects when Project schema is created
-            // projects: true,
+            projects: true,
           },
         });
 
@@ -557,6 +552,7 @@ builder.mutationField("addWorkspaceMember", (t) =>
                 user: true,
               },
             },
+            projects: true,
           },
         });
 
@@ -603,9 +599,14 @@ builder.mutationField("removeWorkspaceMember", (t) =>
         const currentMember = workspace.members.find(
           (m) => m.userId === ctx.user!.id
         );
-        if (!currentMember || currentMember.role !== "ADMIN") {
+
+        // Allow if: 1) Admin removing anyone (except creator), or 2) User removing themselves
+        const isAdmin = currentMember && currentMember.role === "ADMIN";
+        const isRemovingSelf = userId === ctx.user!.id;
+
+        if (!isAdmin && !isRemovingSelf) {
           return fail(
-            "Access denied: Only admins can remove members from this workspace"
+            "Access denied: Only admins can remove other members from this workspace"
           );
         }
 
@@ -632,6 +633,7 @@ builder.mutationField("removeWorkspaceMember", (t) =>
                 user: true,
               },
             },
+            projects: true,
           },
         });
 
@@ -714,6 +716,7 @@ builder.mutationField("updateWorkspaceMemberRole", (t) =>
                 user: true,
               },
             },
+            projects: true,
           },
         });
 
@@ -722,6 +725,76 @@ builder.mutationField("updateWorkspaceMemberRole", (t) =>
         });
       } catch (error: any) {
         return fail("Failed to update member role", [error.message]);
+      }
+    },
+  })
+);
+
+// Answer workspace invitation mutation
+builder.mutationField("answerWorkspaceInvitation", (t) =>
+  t.field({
+    type: WorkspacePayload,
+    args: {
+      workspaceId: t.arg.string({ required: true }),
+      accept: t.arg.boolean({ required: true }),
+    },
+    resolve: async (parent, args, ctx) => {
+      try {
+        const { workspaceId, accept } = args;
+        const userId = ctx.user?.id;
+
+        if (!userId) {
+          return fail("Authentication required");
+        }
+
+        // Find the workspace member record
+        const member = await ctx.prisma.workspaceMember.findUnique({
+          where: {
+            userId_workspaceId: {
+              userId,
+              workspaceId,
+            },
+          },
+        });
+
+        if (!member) {
+          return fail("Invitation not found");
+        }
+
+        if (member.status !== "INVITED") {
+          return fail("User is not invited to this workspace");
+        }
+
+        if (accept) {
+          // Accept invitation: update status to ACTIVE
+          await ctx.prisma.workspaceMember.update({
+            where: {
+              userId_workspaceId: {
+                userId,
+                workspaceId,
+              },
+            },
+            data: {
+              status: "ACTIVE",
+            },
+          });
+
+          return success("Invitation accepted successfully");
+        } else {
+          // Decline invitation: delete the workspace member record
+          await ctx.prisma.workspaceMember.delete({
+            where: {
+              userId_workspaceId: {
+                userId,
+                workspaceId,
+              },
+            },
+          });
+
+          return success("Invitation declined successfully");
+        }
+      } catch (error: any) {
+        return fail("Failed to answer invitation", [error.message]);
       }
     },
   })

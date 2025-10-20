@@ -8,6 +8,8 @@ import { builder } from "./builder.js";
 // Import all modules to register their types and fields
 import "./modules/auth/schema.pothos.js";
 import "./modules/workspace/schema.pothos.js";
+import "./modules/project/schema.pothos.js";
+import "./modules/task/schema.pothos.js";
 
 // Build and export the schema
 export const schema = builder.toSchema();

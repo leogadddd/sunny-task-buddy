@@ -31,6 +31,17 @@ const errorLink = onError(
       if ("statusCode" in networkError && networkError.statusCode === 401) {
         window.location.href = "/auth";
       }
+
+      // Transform "Failed to fetch" errors during authentication to "Authentication Failed"
+      if (
+        operation.operationName === "Me" &&
+        networkError.message === "Failed to fetch"
+      ) {
+        // Create a custom error for authentication failures
+        const authError = new Error("Authentication Failed");
+        // You could also modify the networkError directly if needed
+        console.log("Transformed network error for authentication");
+      }
     }
   }
 );

@@ -80,6 +80,7 @@ export function WorkspaceDialog({
         color: colorOptions[0],
       });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [workspace]);
 
   const form = useForm<CreateWorkspaceForm>({
@@ -109,6 +110,7 @@ export function WorkspaceDialog({
 
   const watchedName = form.watch("name");
   const watchedColor = form.watch("color");
+  const watchedDescription = form.watch("description");
 
   const onSubmit = async (data: CreateWorkspaceForm) => {
     try {
@@ -128,6 +130,7 @@ export function WorkspaceDialog({
           color: data.color,
         });
         setCurrentWorkspace(newWorkspace);
+        navigate(`/w/${newWorkspace.slug}`);
         // Success toast is handled in the store
         form.reset();
         onOpenChange(false);
@@ -166,9 +169,7 @@ export function WorkspaceDialog({
               {watchedName || "Workspace Name"}
             </p>
             <p className="text-sm text-muted-foreground">
-              {watchedName
-                ? `${watchedName.charAt(0).toUpperCase()} icon`
-                : "Preview"}
+              {watchedDescription || "Workspace Description"}
             </p>
           </div>
         </div>

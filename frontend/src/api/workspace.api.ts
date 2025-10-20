@@ -11,6 +11,7 @@ import {
   ADD_WORKSPACE_MEMBER_MUTATION,
   UPDATE_WORKSPACE_MEMBER_ROLE_MUTATION,
   REMOVE_WORKSPACE_MEMBER_MUTATION,
+  ANSWER_WORKSPACE_INVITATION_MUTATION,
 } from "@/lib/apollo/mutations";
 import { Workspace } from "@/interfaces/workspace";
 import { User } from "@/interfaces/users";
@@ -260,22 +261,14 @@ export const workspaceApi = {
 
     return response.data.workspace;
   },
-};
 
-export const userApi = {
-  async searchUsers(
-    query: string,
-    workspaceId?: string,
-    limit?: number
-  ): Promise<User[]> {
-    const result = await apolloClient.query({
-      query: SEARCH_USERS_QUERY,
+  async answerInvitation(workspaceId: string, accept: boolean): Promise<void> {
+    const result = await apolloClient.mutate({
+      mutation: ANSWER_WORKSPACE_INVITATION_MUTATION,
       variables: {
-        query,
         workspaceId,
-        limit: limit || 10,
+        accept,
       },
-      fetchPolicy: "no-cache",
     });
 
     // Check for GraphQL errors
@@ -283,6 +276,14 @@ export const userApi = {
       throw new Error(result.errors[0].message);
     }
 
-    return result.data.searchUsers || [];
+    const response = result.data.answerWorkspaceInvitation;
+
+    if (!response.success) {
+      const errorMsg =
+        response.errors?.[0] ||
+        response.message ||
+        "Failed to answer invitation";
+      throw new Error(errorMsg);
+    }
   },
 };
