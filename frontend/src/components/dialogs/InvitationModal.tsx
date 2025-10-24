@@ -27,6 +27,7 @@ interface InvitationModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   workspace: Workspace;
+  userId: string;
   onAccept: () => void;
   onDecline: () => void;
 }
@@ -42,6 +43,7 @@ export function InvitationModal({
   open,
   onOpenChange,
   workspace,
+  userId,
   onAccept,
   onDecline,
 }: InvitationModalProps) {
@@ -49,11 +51,21 @@ export function InvitationModal({
 
   const handleAccept = async () => {
     setIsLoading(true);
+
+    const userMember = workspace.members.find((m) => m.user.id === userId);
+    if (!userMember) {
+      toast.error("User member not found");
+      setIsLoading(false);
+      return;
+    }
+
     try {
+      // Make the API call
       await workspaceApi.answerInvitation(workspace.id, true);
       toast.success(`Invitation to ${workspace.name} accepted!`);
-      onAccept();
-      onOpenChange(false);
+
+      // Refresh the page to get the latest state
+      window.location.reload();
     } catch (error: unknown) {
       const errorMessage =
         error instanceof Error ? error.message : "Failed to accept invitation";

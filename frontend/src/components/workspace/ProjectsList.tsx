@@ -1,16 +1,19 @@
-import { useState } from "react";
-import { Plus, Search, Grid3X3, Table } from "lucide-react";
-import { Input } from "@/components/ui/input";
+import { useState, useEffect } from "react";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
-import { Badge } from "@/components/ui/badge";
+  Plus,
+  Search,
+  Grid3X3,
+  Table as TableIcon,
+  Loader2,
+} from "lucide-react";
+import { Input } from "@/components/ui/input";
 import { Button } from "../ui/button";
+import CreateProjectDialog from "@/components/dialogs/CreateProjectDialog";
+import ProjectCard from "@/components/project/ProjectCard";
+import { Project } from "@/interfaces/project";
+import { useWorkspaceStore } from "@/stores/workspace.store";
+import { useProjectStore } from "@/stores/project.store";
+import { format } from "date-fns";
 import {
   Table as TableComponent,
   TableBody,
@@ -19,52 +22,43 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-
-interface Project {
-  id: string;
-  title: string;
-  description: string;
-  totalTasks: number;
-  completedTasks: number;
-  status: "active" | "paused" | "completed";
-  dueDate?: string;
-  teamMembers?: number;
-}
-
-// Mock data for demonstration
-const mockProjects: Project[] = [];
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import {
+  getStatusColor,
+  getStatusLabel,
+  calculateTimelineProgress,
+} from "@/lib/project-utils";
 
 export default function ProjectsList() {
+  const { currentWorkspace } = useWorkspaceStore();
+  const { projects, isLoading, fetchProjects, createProject, clearProjects } =
+    useProjectStore();
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState<"cards" | "table">("cards");
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
 
-  // Filter projects based on search query
-  const filteredProjects = mockProjects.filter(
+  useEffect(() => {
+    if (currentWorkspace?.id) {
+      fetchProjects(currentWorkspace.id);
+    } else {
+      clearProjects();
+    }
+  }, [currentWorkspace?.id, fetchProjects, clearProjects]);
+
+  const filteredProjects = projects.filter(
     (project) =>
-      project.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      project.description.toLowerCase().includes(searchQuery.toLowerCase())
+      project.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (project.description &&
+        project.description.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "active":
-        return "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200";
-      case "completed":
-        return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200";
-      case "paused":
-        return "bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200";
-      default:
-        return "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200";
-    }
-  };
-
-  const progressPercentage = (project: Project) => {
-    return Math.round((project.completedTasks / project.totalTasks) * 100);
+  const handleProjectCreated = (project: Project) => {
+    console.log("Project created:", project);
   };
 
   return (
     <div className="space-y-6">
-      {/* Header Section */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Projects</h1>
@@ -74,7 +68,10 @@ export default function ProjectsList() {
         </div>
 
         {/* Add Project Button */}
-        <Button className="flex items-center">
+        <Button
+          className="flex items-center"
+          onClick={() => setIsCreateDialogOpen(true)}
+        >
           <Plus className="mr-2" />
           New Project
         </Button>
@@ -109,111 +106,46 @@ export default function ProjectsList() {
             onClick={() => setViewMode("table")}
             className="h-full px-3 rounded-md"
           >
-            <Table className="h-4 w-4 mr-1" />
+            <TableIcon className="h-4 w-4 mr-1" />
             Table
           </Button>
         </div>
       </div>
 
       {/* Projects Grid */}
-      {filteredProjects.length === 0 ? (
+      {isLoading ? (
+        <div className="flex items-center justify-center py-12">
+          <div className="flex items-center gap-3">
+            <Loader2 className="w-6 h-6 animate-spin" />
+            <p className="text-muted-foreground">Loading projects...</p>
+          </div>
+        </div>
+      ) : filteredProjects.length === 0 ? (
         <div className="text-center py-12">
           <p className="text-muted-foreground text-lg">
-            No projects found matching your search
+            {projects.length === 0 ? (
+              <>
+                No projects found.{" "}
+                <button
+                  className="text-primary hover:underline"
+                  onClick={() => setIsCreateDialogOpen(true)}
+                >
+                  Create your first project
+                </button>
+              </>
+            ) : (
+              "No projects found matching your search"
+            )}
           </p>
         </div>
       ) : viewMode === "cards" ? (
         <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
           {filteredProjects.map((project) => (
-            <Card
+            <ProjectCard
               key={project.id}
-              className="cursor-pointer hover:shadow-lg hover:border-accent transition-all duration-200 group rounded-xl overflow-hidden flex flex-col h-full"
-              onClick={() => {
-                // TODO: Navigate to project details
-                console.log(`Opening project: ${project.title}`);
-              }}
-            >
-              <CardHeader>
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1 min-w-0">
-                    <CardTitle className="text-xl group-hover:text-accent transition-colors line-clamp-2">
-                      {project.title}
-                    </CardTitle>
-                    <CardDescription className="line-clamp-2 mt-1">
-                      {project.description}
-                    </CardDescription>
-                  </div>
-                  <Badge
-                    className={`flex-shrink-0 ${getStatusColor(
-                      project.status
-                    )}`}
-                  >
-                    {project.status.charAt(0).toUpperCase() +
-                      project.status.slice(1)}
-                  </Badge>
-                </div>
-              </CardHeader>
-
-              <CardContent className="flex-grow flex flex-col justify-between">
-                {/* Spacer to push content to bottom */}
-                <div></div>
-
-                {/* Bottom-aligned content */}
-                <div className="space-y-4">
-                  {/* Progress Section */}
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground font-medium">
-                        Progress
-                      </span>
-                      <span className="font-semibold text-accent text-base">
-                        {progressPercentage(project)}%
-                      </span>
-                    </div>
-                    <Progress
-                      value={progressPercentage(project)}
-                      className="h-2.5 rounded-full"
-                    />
-                  </div>
-
-                  {/* Stats Section */}
-                  <div className="grid grid-cols-2 gap-3 text-sm">
-                    <div className="bg-muted p-3 rounded-lg">
-                      <p className="text-muted-foreground text-xs font-medium">
-                        Tasks
-                      </p>
-                      <p className="font-bold text-base mt-1">
-                        {project.completedTasks}/{project.totalTasks}
-                      </p>
-                    </div>
-                    <div className="bg-muted p-3 rounded-lg">
-                      <p className="text-muted-foreground text-xs font-medium">
-                        Team
-                      </p>
-                      <p className="font-bold text-base mt-1">
-                        {project.teamMembers} members
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-
-              {/* Footer - Stuck to bottom */}
-              {project.dueDate && (
-                <div className="border-t px-6 py-3 bg-muted/30">
-                  <p className="text-xs text-muted-foreground font-medium">
-                    Due:{" "}
-                    <span className="font-semibold text-foreground">
-                      {new Date(project.dueDate).toLocaleDateString("en-US", {
-                        month: "short",
-                        day: "numeric",
-                        year: "numeric",
-                      })}
-                    </span>
-                  </p>
-                </div>
-              )}
-            </Card>
+              project={project}
+              onClick={() => console.log(`Opening project: ${project.name}`)}
+            />
           ))}
         </div>
       ) : (
@@ -225,8 +157,9 @@ export default function ProjectsList() {
                 <TableHead>Status</TableHead>
                 <TableHead>Progress</TableHead>
                 <TableHead>Tasks</TableHead>
-                <TableHead>Team</TableHead>
-                <TableHead>Due Date</TableHead>
+                <TableHead>Members</TableHead>
+                <TableHead>Tags</TableHead>
+                <TableHead>Created</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -236,60 +169,79 @@ export default function ProjectsList() {
                   className="cursor-pointer hover:bg-muted/50 transition-colors"
                   onClick={() => {
                     // TODO: Navigate to project details
-                    console.log(`Opening project: ${project.title}`);
+                    console.log(`Opening project: ${project.name}`);
                   }}
                 >
                   <TableCell>
-                    <div>
-                      <div className="font-semibold text-base">
-                        {project.title}
-                      </div>
-                      <div className="text-sm text-muted-foreground line-clamp-2">
-                        {project.description}
+                    <div className="flex items-center gap-3">
+                      <div
+                        className="w-4 h-4 rounded-full flex-shrink-0"
+                        style={{ backgroundColor: project.color || "#f1594a" }}
+                      />
+                      <div>
+                        <div className="font-semibold text-base">
+                          {project.name}
+                        </div>
+                        {project.description && (
+                          <div className="text-sm text-muted-foreground line-clamp-2">
+                            {project.description}
+                          </div>
+                        )}
                       </div>
                     </div>
                   </TableCell>
                   <TableCell>
                     <Badge className={getStatusColor(project.status)}>
-                      {project.status.charAt(0).toUpperCase() +
-                        project.status.slice(1)}
+                      {getStatusLabel(project.status)}
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    <div className="space-y-2">
+                    <div className="space-y-2 min-w-[120px]">
                       <div className="flex items-center justify-between text-sm">
                         <span className="text-muted-foreground">
-                          {progressPercentage(project)}%
+                          {calculateTimelineProgress(project)}%
                         </span>
                       </div>
                       <Progress
-                        value={progressPercentage(project)}
+                        value={calculateTimelineProgress(project)}
                         className="h-2 w-24"
                       />
                     </div>
                   </TableCell>
                   <TableCell>
-                    <span className="font-semibold">
-                      {project.completedTasks}/{project.totalTasks}
-                    </span>
+                    <span className="font-semibold">0/0</span>
                   </TableCell>
                   <TableCell>
                     <span className="font-semibold">
-                      {project.teamMembers} members
+                      {project.members?.length || 0}
                     </span>
                   </TableCell>
                   <TableCell>
-                    {project.dueDate ? (
-                      <span className="text-sm">
-                        {new Date(project.dueDate).toLocaleDateString("en-US", {
-                          month: "short",
-                          day: "numeric",
-                          year: "numeric",
-                        })}
-                      </span>
+                    {project.tags && project.tags.length > 0 ? (
+                      <div className="flex flex-wrap gap-1">
+                        {project.tags.slice(0, 2).map((tag, index) => (
+                          <Badge
+                            key={index}
+                            variant="secondary"
+                            className="text-xs"
+                          >
+                            {tag}
+                          </Badge>
+                        ))}
+                        {project.tags.length > 2 && (
+                          <span className="text-xs text-muted-foreground">
+                            +{project.tags.length - 2}
+                          </span>
+                        )}
+                      </div>
                     ) : (
                       <span className="text-muted-foreground">-</span>
                     )}
+                  </TableCell>
+                  <TableCell>
+                    <span className="text-sm">
+                      {format(new Date(project.createdAt), "MMM dd, yyyy")}
+                    </span>
                   </TableCell>
                 </TableRow>
               ))}
@@ -297,6 +249,13 @@ export default function ProjectsList() {
           </TableComponent>
         </div>
       )}
+
+      {/* Create Project Dialog */}
+      <CreateProjectDialog
+        open={isCreateDialogOpen}
+        onOpenChange={setIsCreateDialogOpen}
+        onProjectCreated={handleProjectCreated}
+      />
     </div>
   );
 }

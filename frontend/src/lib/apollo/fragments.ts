@@ -26,6 +26,32 @@ export const WORKSPACE_MEMBER_FRAGMENT = gql`
   ${USER_FRAGMENT}
 `;
 
+export const PROJECT_FRAGMENT = gql`
+  fragment ProjectFragment on Project {
+    id
+    name
+    slug
+    description
+    startDate
+    endDate
+    tags
+    color
+    status
+    createdAt
+    updatedAt
+    createdById
+    workspaceId
+    createdBy {
+      ...UserFragment
+    }
+    members {
+      ...WorkspaceMemberFragment
+    }
+  }
+  ${USER_FRAGMENT}
+  ${WORKSPACE_MEMBER_FRAGMENT}
+`;
+
 export const WORKSPACE_FRAGMENT = gql`
   fragment WorkspaceFragment on Workspace {
     id

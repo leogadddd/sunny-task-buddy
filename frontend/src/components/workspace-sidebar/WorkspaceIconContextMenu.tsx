@@ -121,6 +121,7 @@ export default function WorkspaceContextMenu({
       name: "Leave Workspace",
       Icon: <CornerDownRight className="w-4 h-4 rotate-180" />,
       role: ["EDITOR", "VIEWER"],
+      className: "text-red-500",
       onClick: async () => {
         try {
           await removeMember(workspace.id, User.id, true);
@@ -145,7 +146,7 @@ export default function WorkspaceContextMenu({
           </>
         ),
         confirmText: "Leave",
-        confirmClassName: "bg-amber-500 hover:bg-amber-600",
+        confirmClassName: "bg-red-500 hover:bg-red-600",
       },
     },
     {

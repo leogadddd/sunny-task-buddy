@@ -9,7 +9,7 @@ export function Logo({ className = "" }: LogoProps) {
   return (
     <div className="flex items-center space-x-1">
       <div
-        className={`select-none pt-1 flex items-center justify-center w-4 h-4 bg-primary text-primary-foreground font-bold text-xs rounded ${className}`}
+        className={`select-none flex items-center justify-center w-4 h-4 bg-primary text-primary-foreground font-bold text-xs rounded ${className}`}
       >
         {appConfig.appLogoText}
       </div>

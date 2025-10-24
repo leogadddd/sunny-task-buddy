@@ -2,8 +2,10 @@ import React from "react";
 import { X, Minus, Square } from "lucide-react";
 import { Logo } from "../Logo";
 import { MenuPopover } from "./MenuPopover";
+import { useAuth } from "@/hooks/useAuth";
 
 export function Header() {
+  const { user } = useAuth();
   const isElectron =
     typeof window !== "undefined" &&
     (window as any).process?.versions?.electron;
@@ -12,7 +14,10 @@ export function Header() {
       <div>
         <Logo />
       </div>
-      <div>
+      <div className="flex gap-1 items-center">
+        {user && (
+          <span className="text-sm text-muted-foreground">{user.email}</span>
+        )}
         <MenuPopover />
         {isElectron && (
           <div className="flex items-center space-x-2">

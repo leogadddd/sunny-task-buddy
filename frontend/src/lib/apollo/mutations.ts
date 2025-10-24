@@ -1,5 +1,5 @@
 import { gql } from "@apollo/client";
-import { WORKSPACE_FRAGMENT } from "./fragments";
+import { WORKSPACE_FRAGMENT, PROJECT_FRAGMENT } from "./fragments";
 
 // Workspace Mutations (aligned with backend)
 export const CREATE_WORKSPACE_MUTATION = gql`
@@ -125,6 +125,83 @@ export const ADD_WORKSPACE_MEMBER_MUTATION = gql`
 export const ANSWER_WORKSPACE_INVITATION_MUTATION = gql`
   mutation AnswerWorkspaceInvitation($workspaceId: String!, $accept: Boolean!) {
     answerWorkspaceInvitation(workspaceId: $workspaceId, accept: $accept) {
+      success
+      message
+      errors
+    }
+  }
+`;
+
+// Project Mutations
+export const CREATE_PROJECT_MUTATION = gql`
+  mutation CreateProject(
+    $workspaceId: String!
+    $name: String!
+    $description: String
+    $startDate: String
+    $endDate: String
+    $tags: [String!]
+    $color: String
+  ) {
+    createProject(
+      workspaceId: $workspaceId
+      name: $name
+      description: $description
+      startDate: $startDate
+      endDate: $endDate
+      tags: $tags
+      color: $color
+    ) {
+      success
+      message
+      data {
+        project {
+          ...ProjectFragment
+        }
+      }
+      errors
+    }
+  }
+  ${PROJECT_FRAGMENT}
+`;
+
+export const UPDATE_PROJECT_MUTATION = gql`
+  mutation UpdateProject(
+    $id: String!
+    $name: String
+    $description: String
+    $startDate: String
+    $endDate: String
+    $tags: [String!]
+    $color: String
+    $status: String
+  ) {
+    updateProject(
+      id: $id
+      name: $name
+      description: $description
+      startDate: $startDate
+      endDate: $endDate
+      tags: $tags
+      color: $color
+      status: $status
+    ) {
+      success
+      message
+      data {
+        project {
+          ...ProjectFragment
+        }
+      }
+      errors
+    }
+  }
+  ${PROJECT_FRAGMENT}
+`;
+
+export const DELETE_PROJECT_MUTATION = gql`
+  mutation DeleteProject($id: String!) {
+    deleteProject(id: $id) {
       success
       message
       errors

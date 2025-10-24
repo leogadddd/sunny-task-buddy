@@ -1,5 +1,9 @@
 import { gql } from "@apollo/client";
-import { USER_FRAGMENT, WORKSPACE_FRAGMENT } from "./fragments";
+import {
+  USER_FRAGMENT,
+  WORKSPACE_FRAGMENT,
+  PROJECT_FRAGMENT,
+} from "./fragments";
 
 // Auth Mutations (Phase 1 - Unified Response Format)
 export const REGISTER_MUTATION = gql`
@@ -117,4 +121,37 @@ export const WORKSPACE_BY_SLUG_QUERY = gql`
     }
   }
   ${WORKSPACE_FRAGMENT}
+`;
+
+// Project Queries
+export const PROJECTS_QUERY = gql`
+  query Projects($workspaceId: String!) {
+    projects(workspaceId: $workspaceId) {
+      success
+      message
+      data {
+        projects {
+          ...ProjectFragment
+        }
+      }
+      errors
+    }
+  }
+  ${PROJECT_FRAGMENT}
+`;
+
+export const PROJECT_BY_SLUG_QUERY = gql`
+  query ProjectBySlug($workspaceSlug: String!, $projectSlug: String!) {
+    projectBySlug(workspaceSlug: $workspaceSlug, projectSlug: $projectSlug) {
+      success
+      message
+      data {
+        project {
+          ...ProjectFragment
+        }
+      }
+      errors
+    }
+  }
+  ${PROJECT_FRAGMENT}
 `;

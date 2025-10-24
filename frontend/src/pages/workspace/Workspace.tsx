@@ -124,15 +124,11 @@ export default function Workspace() {
   }, [currentWorkspace, params.slug, user?.id]);
 
   const handleAcceptInvitation = () => {
-    // TODO: Call mutation to accept invitation
-    // For mock-up, simulate acceptance
     setIsAuthorized(true);
     setShowInvitationModal(false);
   };
 
   const handleDeclineInvitation = () => {
-    // TODO: Call mutation to decline invitation
-    // For mock-up, just close modal
     setShowInvitationModal(false);
   };
 
@@ -164,6 +160,7 @@ export default function Workspace() {
         open={showInvitationModal}
         onOpenChange={setShowInvitationModal}
         workspace={workspace}
+        userId={user?.id || ""}
         onAccept={handleAcceptInvitation}
         onDecline={handleDeclineInvitation}
       />

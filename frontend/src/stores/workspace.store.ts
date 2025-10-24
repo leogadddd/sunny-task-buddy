@@ -298,6 +298,7 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
     userId: string,
     isRemovingSelf = false
   ) => {
+    const state = get();
     set({ isLoading: true, error: null });
     try {
       const removePromise = workspaceApi.removeMember(workspaceId, userId);
@@ -316,17 +317,27 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
 
       console.log("Updated Workspace after removal:", updatedWorkspace);
 
-      // Update the current workspace and the workspaces list if it matches
-      set((state) => ({
-        workspaces: state.workspaces.map((ws) =>
-          ws.id === workspaceId ? updatedWorkspace : ws
-        ),
-        currentWorkspace:
-          state.currentWorkspace?.id === workspaceId
-            ? updatedWorkspace
-            : state.currentWorkspace,
-        isLoading: false,
-      }));
+      // If removing self and it's the current workspace, clear the store
+      if (isRemovingSelf && state.currentWorkspace?.id === workspaceId) {
+        // Remove the workspace from the list and clear current workspace
+        set({
+          workspaces: state.workspaces.filter((ws) => ws.id !== workspaceId),
+          currentWorkspace: null,
+          isLoading: false,
+        });
+      } else {
+        // Update the current workspace and the workspaces list if it matches
+        set((state) => ({
+          workspaces: state.workspaces.map((ws) =>
+            ws.id === workspaceId ? updatedWorkspace : ws
+          ),
+          currentWorkspace:
+            state.currentWorkspace?.id === workspaceId
+              ? updatedWorkspace
+              : state.currentWorkspace,
+          isLoading: false,
+        }));
+      }
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : "Failed to remove member";
