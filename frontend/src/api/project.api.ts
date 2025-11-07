@@ -4,7 +4,7 @@ import {
   UPDATE_PROJECT_MUTATION,
   DELETE_PROJECT_MUTATION,
 } from "@/lib/apollo/mutations";
-import { PROJECTS_QUERY } from "@/lib/apollo/queries";
+import { PROJECTS_QUERY, PROJECT_BY_SLUG_QUERY } from "@/lib/apollo/queries";
 import {
   Project,
   CreateProjectInput,
@@ -36,6 +36,37 @@ class ProjectApi {
       throw new Error("Failed to fetch projects");
     }
   }
+
+  /**
+   * Get a project by slug within a workspace
+   */
+  async getProjectBySlug(
+    workspaceSlug: string,
+    projectSlug: string
+  ): Promise<Project> {
+    try {
+      const { data } = await apolloClient.query({
+        query: PROJECT_BY_SLUG_QUERY,
+        variables: { workspaceSlug, projectSlug },
+        fetchPolicy: "cache-first",
+      });
+
+      if (!data?.projectBySlug?.success) {
+        throw new Error(
+          data?.projectBySlug?.message || "Failed to fetch project"
+        );
+      }
+
+      return data.projectBySlug.data.project;
+    } catch (error: unknown) {
+      console.error("Fetch project by slug error:", error);
+      if (error instanceof Error) {
+        throw new Error(error.message || "Failed to fetch project");
+      }
+      throw new Error("Failed to fetch project");
+    }
+  }
+
   /**
    * Create a new project
    */

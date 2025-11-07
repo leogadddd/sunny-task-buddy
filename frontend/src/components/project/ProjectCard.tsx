@@ -33,7 +33,7 @@ export default function ProjectCard({
       <CardHeader>
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1 min-w-0">
-            <CardTitle className="text-xl group-hover:text-accent transition-colors line-clamp-2">
+            <CardTitle className="text-xl group-hover:text-primary transition-colors line-clamp-2">
               {project.name}
             </CardTitle>
             {project.description && (

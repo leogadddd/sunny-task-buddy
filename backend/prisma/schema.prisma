@@ -61,6 +61,7 @@ model Account {
     updatedAt DateTime @updatedAt
 
     @@unique([provider, providerAccountId])
+    @@index([userId])
     @@map("accounts")
 }
 
@@ -74,6 +75,7 @@ model Session {
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
 
+    @@index([userId])
     @@map("sessions")
 }
 
@@ -103,6 +105,8 @@ model Workspace {
     createdBy User              @relation("WorkspaceCreator", fields: [createdById], references: [id])
     members   WorkspaceMember[]
     projects  Project[]
+
+    @@index([createdById])
 }
 
 enum WorkspaceMemberRole {
@@ -130,6 +134,8 @@ model WorkspaceMember {
     workspaceProjects Project[]
 
     @@unique([userId, workspaceId])
+    @@index([userId])
+    @@index([workspaceId])
     @@map("workspace_members")
 }
 
@@ -151,19 +157,79 @@ model Project {
     members     WorkspaceMember[]
     status      String            @default("planning") // planning, active, completed, archived
     tasks       Task[]
+
+    @@index([workspaceId])
+    @@index([createdById])
 }
 
 model Task {
-    id           String   @id @default(cuid())
-    name         String
-    description  String
-    customFields Json? // Flexible JSON for user-defined fields like status, priority, remarks, enums, etc.
-    projectId    String
-    project      Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
-    createdById  String
-    createdBy    User     @relation("TaskCreator", fields: [createdById], references: [id], onDelete: Cascade)
-    assigneeId   String?
-    assignee     User?    @relation("TaskAssignee", fields: [assigneeId], references: [id])
-    createdAt    DateTime @default(now())
-    updatedAt    DateTime @updatedAt
+    id              String               @id @default(cuid())
+    name            String
+    description     String
+    customFields    Json? // Legacy: Flexible JSON for backward compatibility
+    projectId       String
+    project         Project              @relation(fields: [projectId], references: [id], onDelete: Cascade)
+    createdById     String
+    createdBy       User                 @relation("TaskCreator", fields: [createdById], references: [id], onDelete: Cascade)
+    assigneeId      String?
+    assignee        User?                @relation("TaskAssignee", fields: [assigneeId], references: [id])
+    dropdownFields  TaskDropdownField[] // New: Structured dropdown fields
+    selectedOptions TaskSelectedOption[] // New: Selected options for this task
+    createdAt       DateTime             @default(now())
+    updatedAt       DateTime             @updatedAt
+
+    @@index([projectId])
+    @@index([createdById])
+    @@index([assigneeId])
+    @@map("tasks")
+}
+
+// Dropdown field template for tasks (e.g., "Status", "Priority", "Category")
+model TaskDropdownField {
+    id          String               @id @default(cuid())
+    taskId      String
+    task        Task                 @relation(fields: [taskId], references: [id], onDelete: Cascade)
+    name        String // Field name: "Status", "Priority", etc.
+    description String? // Optional description
+    options     TaskDropdownOption[]
+    createdAt   DateTime             @default(now())
+    updatedAt   DateTime             @updatedAt
+
+    @@unique([taskId, name]) // Prevent duplicate field names per task
+    @@index([taskId])
+    @@map("task_dropdown_fields")
+}
+
+// Individual options within a dropdown field (e.g., "Done", "Ongoing", "In Review")
+model TaskDropdownOption {
+    id         String               @id @default(cuid())
+    fieldId    String
+    field      TaskDropdownField    @relation(fields: [fieldId], references: [id], onDelete: Cascade)
+    label      String // Option label: "Done", "Ongoing", etc.
+    color      String? // Hex color for UI styling
+    order      Int                  @default(0) // Sort order in dropdown
+    selectedBy TaskSelectedOption[]
+    createdAt  DateTime             @default(now())
+    updatedAt  DateTime             @updatedAt
+
+    @@unique([fieldId, label]) // Prevent duplicate options per field
+    @@index([fieldId])
+    @@map("task_dropdown_options")
+}
+
+// Junction table: Track which options are selected for each task
+// Allows a task to have multiple selected options per field (or single if needed)
+model TaskSelectedOption {
+    id        String             @id @default(cuid())
+    taskId    String
+    task      Task               @relation(fields: [taskId], references: [id], onDelete: Cascade)
+    optionId  String
+    option    TaskDropdownOption @relation(fields: [optionId], references: [id], onDelete: Cascade)
+    createdAt DateTime           @default(now())
+    updatedAt DateTime           @updatedAt
+
+    @@unique([taskId, optionId]) // Each option selected only once per task
+    @@index([taskId])
+    @@index([optionId])
+    @@map("task_selected_options")
 }

@@ -27,7 +27,9 @@ export function Sidebar() {
   useEffect(() => {
     if (currentWorkspace && location.pathname !== "/dashboard") {
       const expectedPath = `/w/${currentWorkspace.slug}`;
-      if (location.pathname !== expectedPath) {
+      // Allow project routes under the workspace
+      const isOnWorkspaceRoute = location.pathname.startsWith(expectedPath);
+      if (!isOnWorkspaceRoute) {
         navigate(expectedPath);
       }
     } else if (

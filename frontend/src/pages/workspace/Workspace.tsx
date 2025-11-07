@@ -35,7 +35,7 @@ export default function Workspace() {
 
   useEffect(() => {
     const fetchWorkspace = async () => {
-      if (!params.slug || !isAuthenticated) {
+      if (!params.workspaceSlug || !isAuthenticated) {
         setIsLoading(false);
         return;
       }
@@ -44,7 +44,7 @@ export default function Workspace() {
         setError(null);
 
         // Always fetch the workspace to ensure fresh data
-        const ws = await getWorkspaceBySlug(params.slug);
+        const ws = await getWorkspaceBySlug(params.workspaceSlug);
 
         if (ws) {
           setWorkspace(ws);
@@ -94,7 +94,7 @@ export default function Workspace() {
     fetchWorkspace();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
-    params.slug,
+    params.workspaceSlug,
     isAuthenticated,
     user?.id,
     setIsLoading,
@@ -103,7 +103,7 @@ export default function Workspace() {
 
   // Sync local workspace with store changes
   useEffect(() => {
-    if (currentWorkspace && currentWorkspace.slug === params.slug) {
+    if (currentWorkspace && currentWorkspace.slug === params.workspaceSlug) {
       setWorkspace(currentWorkspace);
       const userMember = currentWorkspace.members.find(
         (member) => member.user.id === user?.id
@@ -121,7 +121,7 @@ export default function Workspace() {
         setShowInvitationModal(false);
       }
     }
-  }, [currentWorkspace, params.slug, user?.id]);
+  }, [currentWorkspace, params.workspaceSlug, user?.id]);
 
   const handleAcceptInvitation = () => {
     setIsAuthorized(true);

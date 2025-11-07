@@ -13,6 +13,7 @@ import ProjectCard from "@/components/project/ProjectCard";
 import { Project } from "@/interfaces/project";
 import { useWorkspaceStore } from "@/stores/workspace.store";
 import { useProjectStore } from "@/stores/project.store";
+import { useNavigate } from "react-router-dom";
 import { format } from "date-fns";
 import {
   Table as TableComponent,
@@ -31,11 +32,12 @@ import {
 } from "@/lib/project-utils";
 
 export default function ProjectsList() {
+  const navigate = useNavigate();
   const { currentWorkspace } = useWorkspaceStore();
   const { projects, isLoading, fetchProjects, createProject, clearProjects } =
     useProjectStore();
   const [searchQuery, setSearchQuery] = useState("");
-  const [viewMode, setViewMode] = useState<"cards" | "table">("cards");
+  const [viewMode, setViewMode] = useState<"cards" | "table">("table");
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
 
   useEffect(() => {
@@ -45,6 +47,10 @@ export default function ProjectsList() {
       clearProjects();
     }
   }, [currentWorkspace?.id, fetchProjects, clearProjects]);
+
+  const handleProjectClick = (project: Project) => {
+    navigate(`/w/${currentWorkspace?.slug}/p/${project.slug}`);
+  };
 
   const filteredProjects = projects.filter(
     (project) =>
@@ -144,7 +150,7 @@ export default function ProjectsList() {
             <ProjectCard
               key={project.id}
               project={project}
-              onClick={() => console.log(`Opening project: ${project.name}`)}
+              onClick={() => handleProjectClick(project)}
             />
           ))}
         </div>
@@ -167,10 +173,7 @@ export default function ProjectsList() {
                 <TableRow
                   key={project.id}
                   className="cursor-pointer hover:bg-muted/50 transition-colors"
-                  onClick={() => {
-                    // TODO: Navigate to project details
-                    console.log(`Opening project: ${project.name}`);
-                  }}
+                  onClick={() => handleProjectClick(project)}
                 >
                   <TableCell>
                     <div className="flex items-center gap-3">
@@ -197,11 +200,11 @@ export default function ProjectsList() {
                   </TableCell>
                   <TableCell>
                     <div className="space-y-2 min-w-[120px]">
-                      <div className="flex items-center justify-between text-sm">
+                      {/* <div className="flex items-center justify-between text-sm">
                         <span className="text-muted-foreground">
                           {calculateTimelineProgress(project)}%
                         </span>
-                      </div>
+                      </div> */}
                       <Progress
                         value={calculateTimelineProgress(project)}
                         className="h-2 w-24"

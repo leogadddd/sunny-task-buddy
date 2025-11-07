@@ -67,8 +67,8 @@ export function WorkspaceItem({
             onContextMenu={handleRightClick}
             className={`transition-all border ${
               isCurrent
-                ? "ring-offset-2 ring-offset-gray-800 rounded-2xl scale-100"
-                : "rounded-lg opacity-70"
+                ? "ring-offset-2 ring-offset-gray-800 rounded-2xl"
+                : "rounded-lg opacity-70 hover:opacity-80"
             }`}
             title={workspace.name}
           >

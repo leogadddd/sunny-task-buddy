@@ -4,6 +4,7 @@ import Auth from "../pages/Auth";
 import Dashboard from "../pages/Dashboard";
 import NotFound from "../pages/NotFound";
 import Workspace from "@/pages/workspace/Workspace";
+import Project from "@/pages/workspace/Project";
 import { Layout } from "@/components/layout/Layout";
 
 // Define routes as an array of objects for easy addition
@@ -20,10 +21,19 @@ export const routes = [
     protected: true,
   },
   {
-    path: "/w/:slug",
+    path: "/w/:workspaceSlug",
     element: (
       <Layout>
         <Workspace />
+      </Layout>
+    ),
+    protected: true,
+  },
+  {
+    path: "/w/:workspaceSlug/p/:projectSlug",
+    element: (
+      <Layout>
+        <Project />
       </Layout>
     ),
     protected: true,

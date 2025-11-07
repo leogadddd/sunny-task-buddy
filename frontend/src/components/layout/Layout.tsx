@@ -3,6 +3,8 @@ import { Header } from "../header/Header";
 import { Sidebar } from "../workspace-sidebar/Sidebar";
 import { useLoading } from "@/hooks/useLoading";
 import { Loader2 } from "lucide-react";
+import { WorkspaceSyncProvider } from "./WorkspaceSyncProvider";
+import { ProjectSyncProvider } from "./ProjectSyncProvider";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -13,6 +15,8 @@ export function Layout({ children }: LayoutProps) {
 
   return (
     <div className="h-screen flex flex-col relative">
+      <WorkspaceSyncProvider />
+      <ProjectSyncProvider />
       <Header />
       <div className="flex-1 flex">
         <Sidebar />
