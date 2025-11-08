@@ -130,7 +130,7 @@ export function WorkspaceDialog({
           color: data.color,
         });
         setCurrentWorkspace(newWorkspace);
-        navigate(`/w/${newWorkspace.slug}`);
+        navigate(`/${newWorkspace.slug}`);
         // Success toast is handled in the store
         form.reset();
         onOpenChange(false);

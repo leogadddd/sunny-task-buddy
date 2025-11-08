@@ -1,10 +1,14 @@
-import React from "react";
+import React, { useState } from "react";
 import { Header } from "../header/Header";
 import { Sidebar } from "../workspace-sidebar/Sidebar";
+import { WorkspaceSidebar } from "../workspace-sidebar/WorkspaceSidebar";
+import { ProjectSidebar } from "../project/ProjectSidebar";
 import { useLoading } from "@/hooks/useLoading";
 import { Loader2 } from "lucide-react";
 import { WorkspaceSyncProvider } from "./WorkspaceSyncProvider";
 import { ProjectSyncProvider } from "./ProjectSyncProvider";
+import { useWorkspaceStore } from "@/stores/workspace.store";
+import { useLocation, useParams } from "react-router-dom";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -12,6 +16,17 @@ interface LayoutProps {
 
 export function Layout({ children }: LayoutProps) {
   const { isLoading } = useLoading();
+  const { currentWorkspace } = useWorkspaceStore();
+  const location = useLocation();
+  const params = useParams();
+  const [isWorkspaceSidebarOpen, setIsWorkspaceSidebarOpen] = useState(false);
+
+  const isOnWorkspacePage = currentWorkspace && !params.projectSlug;
+  const isOnProjectPage = currentWorkspace && !!params.projectSlug;
+  const shouldShowWorkspaceSidebar =
+    (isWorkspaceSidebarOpen || isOnWorkspacePage) &&
+    currentWorkspace &&
+    !isOnProjectPage;
 
   return (
     <div className="h-screen flex flex-col relative">
@@ -19,7 +34,13 @@ export function Layout({ children }: LayoutProps) {
       <ProjectSyncProvider />
       <Header />
       <div className="flex-1 flex">
-        <Sidebar />
+        <Sidebar
+          onToggleWorkspaceSidebar={() =>
+            setIsWorkspaceSidebarOpen(!isWorkspaceSidebarOpen)
+          }
+        />
+        {shouldShowWorkspaceSidebar && <WorkspaceSidebar />}
+        {isOnProjectPage && <ProjectSidebar />}
         <div className="flex-1 h-[calc(100vh-2rem)] overflow-auto">
           {children}
         </div>

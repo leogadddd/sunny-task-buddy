@@ -17,12 +17,8 @@ export function ProjectSyncProvider() {
 
   useEffect(() => {
     const syncProject = async () => {
-      // Only sync if we're on a project route and have both slugs
-      if (
-        !params.workspaceSlug ||
-        !params.projectSlug ||
-        !location.pathname.includes("/p/")
-      ) {
+      // Only sync if we have both workspace and project slugs
+      if (!params.workspaceSlug || !params.projectSlug) {
         setCurrentProject(null);
         return;
       }

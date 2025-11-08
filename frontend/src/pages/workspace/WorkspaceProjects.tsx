@@ -1,15 +1,8 @@
-import { useState, useEffect } from "react";
-import {
-  Plus,
-  Search,
-  Grid3X3,
-  Table as TableIcon,
-  Loader2,
-} from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { useParams } from "react-router-dom";
+import { Plus, Search, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { Button } from "../ui/button";
-import CreateProjectDialog from "@/components/dialogs/CreateProjectDialog";
-import ProjectCard from "@/components/project/ProjectCard";
+import { Button } from "@/components/ui/button";
 import { Project } from "@/interfaces/project";
 import { useWorkspaceStore } from "@/stores/workspace.store";
 import { useProjectStore } from "@/stores/project.store";
@@ -30,14 +23,15 @@ import {
   getStatusLabel,
   calculateTimelineProgress,
 } from "@/lib/project-utils";
+import CreateProjectDialog from "@/components/dialogs/CreateProjectDialog";
 
-export default function ProjectsList() {
+export default function WorkspaceProjects() {
+  const params = useParams();
   const navigate = useNavigate();
   const { currentWorkspace } = useWorkspaceStore();
   const { projects, isLoading, fetchProjects, createProject, clearProjects } =
     useProjectStore();
   const [searchQuery, setSearchQuery] = useState("");
-  const [viewMode, setViewMode] = useState<"cards" | "table">("table");
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
 
   useEffect(() => {
@@ -64,12 +58,12 @@ export default function ProjectsList() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="container space-y-6 mx-auto py-8">
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Projects</h1>
-          <p className="text-muted-foreground mt-1">
-            Manage and track all your projects in one place
+        <div className="space-y-1">
+          <h1 className="text-3xl font-bold">Projects</h1>
+          <p className="text-muted-foreground">
+            Manage all projects in this workspace
           </p>
         </div>
 
@@ -83,42 +77,18 @@ export default function ProjectsList() {
         </Button>
       </div>
 
-      {/* Search and View Toggle */}
-      <div className="flex items-center justify-between gap-4">
-        <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder="Search projects..."
-            className="pl-10 h-12 rounded-xl"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-        </div>
-
-        {/* View Toggle */}
-        <div className="flex gap-1 items-center bg-muted rounded-lg p-1.5 h-12">
-          <Button
-            variant={viewMode === "cards" ? "default" : "ghost"}
-            size="sm"
-            onClick={() => setViewMode("cards")}
-            className="h-full px-3 rounded-md"
-          >
-            <Grid3X3 className="h-4 w-4 mr-1" />
-            Cards
-          </Button>
-          <Button
-            variant={viewMode === "table" ? "default" : "ghost"}
-            size="sm"
-            onClick={() => setViewMode("table")}
-            className="h-full px-3 rounded-md"
-          >
-            <TableIcon className="h-4 w-4 mr-1" />
-            Table
-          </Button>
-        </div>
+      {/* Search */}
+      <div className="relative max-w-md">
+        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <Input
+          placeholder="Search projects..."
+          className="pl-10 h-12 rounded-xl"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+        />
       </div>
 
-      {/* Projects Grid */}
+      {/* Projects Table */}
       {isLoading ? (
         <div className="flex items-center justify-center py-12">
           <div className="flex items-center gap-3">
@@ -144,22 +114,12 @@ export default function ProjectsList() {
             )}
           </p>
         </div>
-      ) : viewMode === "cards" ? (
-        <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-          {filteredProjects.map((project) => (
-            <ProjectCard
-              key={project.id}
-              project={project}
-              onClick={() => handleProjectClick(project)}
-            />
-          ))}
-        </div>
       ) : (
         <div className="rounded-lg border bg-card">
           <TableComponent>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[300px]">Project</TableHead>
+                <TableHead className="w-[300px]">Name</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Progress</TableHead>
                 <TableHead>Tasks</TableHead>
@@ -185,11 +145,6 @@ export default function ProjectsList() {
                         <div className="font-semibold text-base">
                           {project.name}
                         </div>
-                        {project.description && (
-                          <div className="text-sm text-muted-foreground line-clamp-2">
-                            {project.description}
-                          </div>
-                        )}
                       </div>
                     </div>
                   </TableCell>
@@ -200,11 +155,6 @@ export default function ProjectsList() {
                   </TableCell>
                   <TableCell>
                     <div className="space-y-2 min-w-[120px]">
-                      {/* <div className="flex items-center justify-between text-sm">
-                        <span className="text-muted-foreground">
-                          {calculateTimelineProgress(project)}%
-                        </span>
-                      </div> */}
                       <Progress
                         value={calculateTimelineProgress(project)}
                         className="h-2 w-24"

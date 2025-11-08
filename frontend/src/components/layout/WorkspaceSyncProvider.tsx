@@ -17,7 +17,10 @@ export function WorkspaceSyncProvider() {
   useEffect(() => {
     const syncWorkspace = async () => {
       // Only sync if we're on a workspace route and have a workspace slug
-      if (!params.workspaceSlug || !location.pathname.startsWith("/w/")) {
+      if (
+        !params.workspaceSlug ||
+        ["/", "/auth", "/dashboard"].includes(location.pathname)
+      ) {
         return;
       }
 

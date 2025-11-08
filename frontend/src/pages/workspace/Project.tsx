@@ -106,14 +106,6 @@ export default function Project() {
 
   return (
     <div className="container space-y-6 mx-auto py-8">
-      <div>
-        <Link
-          to={`/w/${params.workspaceSlug}`}
-          className="text-sm text-muted-foreground hover:underline"
-        >
-          ← Back to {currentWorkspace?.name}
-        </Link>
-      </div>
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="space-y-1">

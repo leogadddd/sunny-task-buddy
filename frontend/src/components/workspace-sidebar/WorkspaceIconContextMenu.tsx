@@ -97,7 +97,7 @@ export default function WorkspaceContextMenu({
       Icon: <CornerDownRight className="w-4 h-4" />,
       onClick: () => {
         if (currentWorkspace?.id !== workspace.id) {
-          navigate(`/w/${workspace.slug}`);
+          navigate(`/${workspace.slug}`);
           setCurrentWorkspace(workspace);
           onAction();
         }

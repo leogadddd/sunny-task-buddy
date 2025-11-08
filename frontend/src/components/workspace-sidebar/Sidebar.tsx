@@ -6,7 +6,11 @@ import { WorkspaceDialog } from "../dialogs/WorkspaceDialog";
 import { WorkspaceItem } from "./WorkspaceItem";
 import { useNavigate, useResolvedPath, useLocation } from "react-router-dom";
 
-export function Sidebar() {
+interface SidebarProps {
+  onToggleWorkspaceSidebar: () => void;
+}
+
+export function Sidebar({ onToggleWorkspaceSidebar }: SidebarProps) {
   const {
     workspaces,
     currentWorkspace,
@@ -26,16 +30,17 @@ export function Sidebar() {
   // Navigate to the new current workspace after deletion
   useEffect(() => {
     if (currentWorkspace && location.pathname !== "/dashboard") {
-      const expectedPath = `/w/${currentWorkspace.slug}`;
+      const expectedPath = `/${currentWorkspace.slug}`;
       // Allow project routes under the workspace
       const isOnWorkspaceRoute = location.pathname.startsWith(expectedPath);
       if (!isOnWorkspaceRoute) {
         navigate(expectedPath);
       }
     } else if (
-      workspaces.length === 0 &&
-      !currentWorkspace &&
-      !location.pathname.startsWith("/w/")
+      (workspaces.length === 0 &&
+        !currentWorkspace &&
+        !location.pathname.startsWith("/")) ||
+      location.pathname === "/dashboard"
     ) {
       if (location.pathname !== "/dashboard") {
         navigate("/dashboard");
@@ -45,7 +50,11 @@ export function Sidebar() {
 
   // Clear currentWorkspace when navigating away from workspace routes
   useEffect(() => {
-    if (!location.pathname.startsWith("/w/")) {
+    const nonWorkspaceRoutes = ["/", "/auth", "/dashboard"];
+    if (
+      nonWorkspaceRoutes.includes(location.pathname) ||
+      location.pathname.startsWith("/auth")
+    ) {
       setCurrentWorkspace(null);
     }
   }, [location.pathname, setCurrentWorkspace]);
@@ -74,6 +83,7 @@ export function Sidebar() {
           isCurrent={currentWorkspace?.id === workspace.id}
           onSelect={setCurrentWorkspace}
           onDelete={deleteWorkspace}
+          onToggleSidebar={onToggleWorkspaceSidebar}
         />
       ))}
 

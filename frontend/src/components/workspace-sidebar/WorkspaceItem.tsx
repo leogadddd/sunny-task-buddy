@@ -18,6 +18,7 @@ interface WorkspaceItemProps {
   isCurrent: boolean;
   onSelect: (workspace: Workspace) => void;
   onDelete: (id: string) => Promise<void>;
+  onToggleSidebar?: () => void;
 }
 
 export function WorkspaceItem({
@@ -25,6 +26,7 @@ export function WorkspaceItem({
   isCurrent,
   onSelect,
   onDelete,
+  onToggleSidebar,
 }: WorkspaceItemProps) {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -45,8 +47,12 @@ export function WorkspaceItem({
   };
 
   const handleClick = () => {
-    navigate(`/w/${workspace.slug}`);
-    onSelect(workspace);
+    if (isCurrent && onToggleSidebar) {
+      onToggleSidebar();
+    } else {
+      navigate(`/${workspace.slug}`);
+      onSelect(workspace);
+    }
   };
 
   const handleDelete = async () => {

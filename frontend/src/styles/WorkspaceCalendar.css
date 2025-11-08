@@ -1,0 +1,223 @@
+/* Custom styles for FullCalendar to match the app theme */
+.fc {
+  font-family: "Outfit", sans-serif;
+  font-size: 14px;
+  --fc-border-color: oklch(var(--border));
+  --fc-daygrid-event-dot-width: 6px;
+}
+
+.fc .fc-toolbar {
+  background: var(--muted);
+  border: 1px solid var(--muted);
+  border-bottom: none;
+  border-radius: 6px 6px 0 0;
+  padding: 12px 16px;
+  margin-bottom: 0;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.fc .fc-toolbar-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: oklch(var(--foreground));
+  margin: 0;
+}
+
+.fc .fc-button-group {
+  display: flex;
+  gap: 4px;
+}
+
+.fc .fc-button {
+  background: var(--card);
+  border: 1px solid var(--muted);
+  color: var(--foreground);
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 500;
+  padding: 6px 12px;
+  transition: all 0.2s ease;
+  font-family: inherit;
+  min-width: auto;
+}
+
+.fc .fc-button:hover {
+  background: oklch(var(--accent));
+  border-color: oklch(var(--accent));
+  color: oklch(var(--accent-foreground));
+}
+
+.fc .fc-button:not(:disabled).fc-button-active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: var(--primary-foreground);
+}
+
+/* Today button specific styling */
+.fc .fc-button:nth-child(1) {
+  background: var(--card);
+  border: 1px solid var(--muted);
+  color: var(--foreground);
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 500;
+  padding: 6px 12px;
+  transition: all 0.2s ease;
+  font-family: inherit;
+  min-width: auto;
+}
+
+.fc .fc-button:nth-child(1):hover {
+  background: oklch(var(--accent));
+  border-color: oklch(var(--accent));
+  color: oklch(var(--accent-foreground));
+}
+
+.fc .fc-button:disabled {
+  opacity: 0.5;
+}
+
+.fc .fc-view-harness {
+  background: oklch(var(--card));
+  border: 1px solid oklch(var(--muted));
+  border-radius: 0 0 6px 6px;
+  border-top: none;
+}
+
+.fc .fc-col-header {
+  background: oklch(var(--muted) / 0.5);
+  border-bottom: 1px solid oklch(var(--muted));
+}
+
+.fc .fc-col-header-cell {
+  border-right: 1px solid oklch(var(--muted) / 0.6);
+  padding: 8px 6px;
+  font-weight: 500;
+  font-size: 13px;
+  color: oklch(var(--foreground));
+  text-align: center;
+}
+
+.fc .fc-daygrid-day {
+  border-right: 1px solid var(--muted);
+  border-bottom: 1px solid var(--muted);
+  position: relative;
+}
+
+.fc .fc-daygrid-day:hover {
+  background: var(--popover);
+}
+
+.fc .fc-daygrid-day.fc-day-today {
+  background-color: var(--primary);
+}
+
+.fc .fc-daygrid-day.fc-day-today::before {
+  content: "";
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 6px;
+  height: 6px;
+  background: var(--primary);
+  border-radius: 50%;
+}
+
+.fc .fc-daygrid-day-number {
+  padding: 6px 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: oklch(var(--foreground));
+  text-align: center;
+  position: relative;
+  z-index: 1;
+}
+
+.fc .fc-daygrid-day.fc-day-other {
+  background: oklch(var(--muted) / 0.2);
+  color: oklch(var(--muted-foreground) / 0.6);
+}
+
+.fc .fc-daygrid-day.fc-day-other .fc-daygrid-day-number {
+  color: oklch(var(--muted-foreground) / 0.6);
+}
+
+.fc .fc-event {
+  border-radius: 4px;
+  border: none;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 2px 6px;
+  margin: 1px 2px;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+.fc .fc-event:hover {
+  opacity: 0.8;
+}
+
+.fc .fc-event-main {
+  padding: 1px 0;
+}
+
+.fc .fc-timegrid-slot {
+  border-bottom: 1px solid oklch(var(--muted) / 0.4);
+  height: 2.5em;
+}
+
+.fc .fc-timegrid-axis {
+  border-right: 1px solid var(--muted);
+  background: oklch(var(--muted) / 0.3);
+}
+
+.fc .fc-timegrid-axis-cushion {
+  padding: 4px 8px;
+  font-size: 12px;
+  color: var(--muted-foreground);
+  text-align: right;
+}
+
+.fc .fc-timegrid-divider {
+  border-color: var(--muted);
+}
+
+.fc .fc-scrollgrid {
+  border: 1px solid var(--muted);
+  border-radius: 6px;
+}
+
+.fc .fc-scrollgrid-section > * {
+  border-color: var(--muted);
+}
+
+/* Week/Day view specific styles */
+.fc .fc-timegrid-slot-minor {
+  border-bottom: 1px dotted oklch(var(--border) / 0.3);
+}
+
+/* Event content styling */
+.fc .fc-event-title {
+  font-weight: 500;
+  font-size: 11px;
+  line-height: 1.2;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .fc .fc-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .fc .fc-toolbar-title {
+    font-size: 18px;
+    text-align: center;
+  }
+
+  .fc .fc-button-group {
+    justify-content: center;
+  }
+}
