@@ -1,20 +1,12 @@
 import React, { useState } from "react";
 import { useParams } from "react-router-dom";
-import { Plus, Search, Loader2, UserPlus, MoreHorizontal } from "lucide-react";
-import { Input } from "@/components/ui/input";
+import { Plus, Loader2, UserPlus, MoreHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useWorkspaceStore } from "@/stores/workspace.store";
 import { WorkspaceMember } from "@/interfaces/workspace";
 import { format } from "date-fns";
-import {
-  Table as TableComponent,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { DataTable, ColumnDef } from "@/components/ui/data-table";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -71,7 +63,6 @@ function getStatusColor(status: string) {
 export default function WorkspaceMembers() {
   const params = useParams();
   const { currentWorkspace } = useWorkspaceStore();
-  const [searchQuery, setSearchQuery] = useState("");
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [selectedMember, setSelectedMember] = useState<WorkspaceMember | null>(
@@ -80,25 +71,154 @@ export default function WorkspaceMembers() {
 
   const members = currentWorkspace?.members || [];
 
-  const filteredMembers = members.filter((member) => {
-    const user = member.user;
-    const displayName = `${user?.firstName || ""} ${
-      user?.lastName || ""
-    }`.trim();
-    const searchTerm = searchQuery.toLowerCase();
-
-    return (
-      displayName.toLowerCase().includes(searchTerm) ||
-      user?.email?.toLowerCase().includes(searchTerm) ||
-      member.role.toLowerCase().includes(searchTerm) ||
-      member.status.toLowerCase().includes(searchTerm)
-    );
-  });
-
   const handleEditMember = (member: WorkspaceMember) => {
     setSelectedMember(member);
     setIsEditDialogOpen(true);
   };
+
+  const memberColumns: ColumnDef<WorkspaceMember>[] = [
+    {
+      key: "member",
+      header: "Member",
+      sortable: false,
+      minWidth: 300,
+      resizable: true,
+      searchable: true,
+      searchValue: (member) => {
+        const user = member.user;
+        const displayName = `${user?.firstName || ""} ${
+          user?.lastName || ""
+        }`.trim();
+        return `${displayName} ${user?.email || ""}`.toLowerCase();
+      },
+      tooltipContent: (member) => {
+        const user = member.user;
+        const displayName =
+          `${user?.firstName || ""} ${user?.lastName || ""}`.trim() ||
+          user?.email ||
+          "Unknown";
+        return (
+          <div className="space-y-2 min-w-[200px]">
+            <div className="flex items-center gap-3">
+              <div
+                className="w-8 h-8 rounded-full flex items-center justify-center text-white font-semibold text-xs"
+                style={{
+                  backgroundColor:
+                    user?.color || stringToColor(member.id || displayName),
+                }}
+              >
+                {getInitials(displayName, user?.email)}
+              </div>
+              <div>
+                <div className="font-semibold text-sm">{displayName}</div>
+                <div className="text-xs text-muted-foreground">
+                  @{user?.username}
+                </div>
+              </div>
+            </div>
+            {user?.bio && (
+              <div className="text-xs text-muted-foreground border-t pt-2">
+                {user.bio}
+              </div>
+            )}
+            <div className="text-xs text-muted-foreground">{user?.email}</div>
+          </div>
+        );
+      },
+      cell: (member) => {
+        const user = member.user;
+        const displayName =
+          `${user?.firstName || ""} ${user?.lastName || ""}`.trim() ||
+          user?.email ||
+          "Unknown";
+        const initials = getInitials(displayName, user?.email);
+        const bg = user?.color || stringToColor(member.id || displayName);
+
+        return (
+          <div className="flex items-center gap-3">
+            <div
+              className="w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold text-sm flex-shrink-0"
+              style={{ backgroundColor: bg }}
+            >
+              {initials}
+            </div>
+            <div>
+              <div className="font-semibold">{displayName}</div>
+              <div className="text-sm text-muted-foreground">{user?.email}</div>
+            </div>
+          </div>
+        );
+      },
+    },
+    {
+      key: "role",
+      header: "Role",
+      sortable: true,
+      minWidth: 120,
+      resizable: true,
+      searchable: true,
+      searchValue: (member) => member.role.toLowerCase(),
+      tooltipText: (member) => member.role,
+      cell: (member) => (
+        <Badge className={getRoleColor(member.role)}>{member.role}</Badge>
+      ),
+    },
+    {
+      key: "status",
+      header: "Status",
+      sortable: true,
+      minWidth: 120,
+      resizable: true,
+      searchable: true,
+      searchValue: (member) => member.status.toLowerCase(),
+      tooltipText: (member) => member.status,
+      cell: (member) => (
+        <Badge className={getStatusColor(member.status)}>{member.status}</Badge>
+      ),
+    },
+    {
+      key: "joined",
+      header: "Joined",
+      sortable: true,
+      minWidth: 150,
+      resizable: true,
+      tooltipText: (member) => {
+        return member.status === "ACTIVE"
+          ? "Active member"
+          : "Pending invitation";
+      },
+      cell: (member) => (
+        <span className="text-sm">
+          {member.status === "ACTIVE" ? "Active" : "Pending"}
+        </span>
+      ),
+    },
+    {
+      key: "actions",
+      header: "Actions",
+      sortable: false,
+      minWidth: 50,
+      resizable: false,
+      isPinned: "right",
+      cell: (member) => (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="sm">
+              <MoreHorizontal className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => handleEditMember(member)}>
+              Edit Role
+            </DropdownMenuItem>
+            <DropdownMenuItem className="text-red-600">
+              Remove Member
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      ),
+    },
+  ];
 
   const activeMembers = members.filter((m) => m.status === "ACTIVE");
   const invitedMembers = members.filter((m) => m.status === "INVITED");
@@ -138,117 +258,30 @@ export default function WorkspaceMembers() {
         </div>
       </div>
 
-      {/* Search */}
-      <div className="relative max-w-md">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          placeholder="Search members..."
-          className="pl-10 h-12 rounded-xl"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-        />
-      </div>
-
       {/* Members Table */}
-      {filteredMembers.length === 0 ? (
+      {members.length === 0 ? (
         <div className="text-center py-12">
           <p className="text-muted-foreground text-lg">
-            {members.length === 0 ? (
-              <>
-                No members found.{" "}
-                <button
-                  className="text-primary hover:underline"
-                  onClick={() => setIsAddDialogOpen(true)}
-                >
-                  Invite your first member
-                </button>
-              </>
-            ) : (
-              "No members found matching your search"
-            )}
+            No members found.{" "}
+            <button
+              className="text-primary hover:underline"
+              onClick={() => setIsAddDialogOpen(true)}
+            >
+              Invite your first member
+            </button>
           </p>
         </div>
       ) : (
-        <div className="rounded-lg border bg-card">
-          <TableComponent>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-[300px]">Member</TableHead>
-                <TableHead>Role</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Joined</TableHead>
-                <TableHead className="w-[50px]"></TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredMembers.map((member) => {
-                const user = member.user;
-                const displayName =
-                  `${user?.firstName || ""} ${user?.lastName || ""}`.trim() ||
-                  user?.email ||
-                  "Unknown";
-                const initials = getInitials(displayName, user?.email);
-                const bg =
-                  user?.color || stringToColor(member.id || displayName);
-
-                return (
-                  <TableRow key={member.id}>
-                    <TableCell>
-                      <div className="flex items-center gap-3">
-                        <div
-                          className="w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold text-sm flex-shrink-0"
-                          style={{ backgroundColor: bg }}
-                        >
-                          {initials}
-                        </div>
-                        <div>
-                          <div className="font-semibold">{displayName}</div>
-                          <div className="text-sm text-muted-foreground">
-                            {user?.email}
-                          </div>
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge className={getRoleColor(member.role)}>
-                        {member.role}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge className={getStatusColor(member.status)}>
-                        {member.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <span className="text-sm">
-                        {member.status === "ACTIVE" ? "Active" : "Pending"}
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="sm">
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem
-                            onClick={() => handleEditMember(member)}
-                          >
-                            Edit Role
-                          </DropdownMenuItem>
-                          <DropdownMenuItem className="text-red-600">
-                            Remove Member
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </TableComponent>
-        </div>
+        <DataTable
+          data={members as unknown as Record<string, unknown>[]}
+          columns={
+            memberColumns as unknown as ColumnDef<Record<string, unknown>>[]
+          }
+          searchConfig={{
+            placeholder: "Search members...",
+            className: "max-w-md",
+          }}
+        />
       )}
 
       {/* Dialogs */}

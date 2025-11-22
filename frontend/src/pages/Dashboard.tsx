@@ -7,7 +7,19 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { LogOut, Plus, Calendar, CheckCircle2, Clock, TrendingUp, Users, Folder, Bell, Star, ArrowRight } from "lucide-react";
+import {
+  LogOut,
+  Plus,
+  Calendar,
+  CheckCircle2,
+  Clock,
+  TrendingUp,
+  Users,
+  Folder,
+  Bell,
+  Star,
+  ArrowRight,
+} from "lucide-react";
 import { toast } from "sonner";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { useAuth } from "@/hooks/useAuth";
@@ -56,28 +68,103 @@ const chartConfig = {
 
 // Mock data for dashboard sections
 const todaysTasks = [
-  { id: 1, title: "Review project proposal", project: "Marketing Campaign", priority: "high", dueTime: "2:00 PM" },
-  { id: 2, title: "Update team documentation", project: "Product Launch", priority: "medium", dueTime: "4:00 PM" },
-  { id: 3, title: "Client feedback call", project: "Website Redesign", priority: "high", dueTime: "5:00 PM" },
+  {
+    id: 1,
+    title: "Review project proposal",
+    project: "Marketing Campaign",
+    priority: "high",
+    dueTime: "2:00 PM",
+  },
+  {
+    id: 2,
+    title: "Update team documentation",
+    project: "Product Launch",
+    priority: "medium",
+    dueTime: "4:00 PM",
+  },
+  {
+    id: 3,
+    title: "Client feedback call",
+    project: "Website Redesign",
+    priority: "high",
+    dueTime: "5:00 PM",
+  },
 ];
 
 const recentActivity = [
-  { id: 1, action: "Completed task", item: "Database optimization", project: "Backend API", time: "2 hours ago", user: "You" },
-  { id: 2, action: "Created project", item: "Mobile App UI", project: "Mobile Development", time: "1 day ago", user: "Sarah" },
-  { id: 3, action: "Updated deadline", item: "Q4 Report", project: "Analytics", time: "2 days ago", user: "Mike" },
-  { id: 4, action: "Added member", item: "John Doe", project: "Design Team", time: "3 days ago", user: "You" },
+  {
+    id: 1,
+    action: "Completed task",
+    item: "Database optimization",
+    project: "Backend API",
+    time: "2 hours ago",
+    user: "John Doe",
+  },
+  {
+    id: 2,
+    action: "Created project",
+    item: "Mobile App UI",
+    project: "Mobile Development",
+    time: "4 hours ago",
+    user: "Jane Smith",
+  },
+  {
+    id: 3,
+    action: "Updated task",
+    item: "User authentication",
+    project: "Frontend",
+    time: "6 hours ago",
+    user: "Bob Johnson",
+  },
 ];
 
 const upcomingDeadlines = [
-  { id: 1, title: "Website Launch", project: "E-commerce Site", dueDate: "Nov 15", daysLeft: 7 },
-  { id: 2, title: "Client Presentation", project: "Marketing Campaign", dueDate: "Nov 18", daysLeft: 10 },
-  { id: 3, title: "API Documentation", project: "Backend Services", dueDate: "Nov 20", daysLeft: 12 },
+  {
+    id: 1,
+    title: "Website Launch",
+    project: "E-commerce Site",
+    dueDate: "Nov 15",
+    daysLeft: 7,
+  },
+  {
+    id: 2,
+    title: "Client Presentation",
+    project: "Marketing Campaign",
+    dueDate: "Nov 18",
+    daysLeft: 10,
+  },
+  {
+    id: 3,
+    title: "API Documentation",
+    project: "Backend Services",
+    dueDate: "Nov 20",
+    daysLeft: 12,
+  },
 ];
 
 const newsUpdates = [
-  { id: 1, title: "New Feature: Advanced Analytics", description: "Track project performance with detailed insights and reports.", date: "Nov 5", type: "feature" },
-  { id: 2, title: "System Maintenance", description: "Scheduled maintenance on Nov 12, 2-4 AM EST.", date: "Nov 3", type: "maintenance" },
-  { id: 3, title: "Team Collaboration Update", description: "Improved real-time collaboration features now available.", date: "Nov 1", type: "update" },
+  {
+    id: 1,
+    title: "New Feature: Advanced Analytics",
+    description:
+      "Track project performance with detailed insights and reports.",
+    date: "Nov 5",
+    type: "feature",
+  },
+  {
+    id: 2,
+    title: "System Maintenance",
+    description: "Scheduled maintenance on Nov 12, 2-4 AM EST.",
+    date: "Nov 3",
+    type: "maintenance",
+  },
+  {
+    id: 3,
+    title: "Team Collaboration Update",
+    description: "Improved real-time collaboration features now available.",
+    date: "Nov 1",
+    type: "update",
+  },
 ];
 
 export default function Dashboard() {
@@ -86,20 +173,16 @@ export default function Dashboard() {
   const { workspaces } = useWorkspaceStore();
   const { projects } = useProjectStore();
 
-  const [isCreateWorkspaceDialogOpen, setIsCreateWorkspaceDialogOpen] = useState(false);
+  const [isCreateWorkspaceDialogOpen, setIsCreateWorkspaceDialogOpen] =
+    useState(false);
 
   // Calculate dashboard stats
   const dashboardStats = useMemo(() => {
-    const totalProjects = projects.length;
-    const totalWorkspaces = workspaces.length;
-    const activeProjects = projects.filter(p => p.status === 'ACTIVE').length;
-
     return {
-      totalWorkspaces,
-      totalProjects,
-      activeProjects,
-      completedTasks: dummyStats.completedTasks,
+      totalWorkspaces: workspaces.length,
+      totalProjects: projects.length,
       pendingTasks: dummyStats.pendingTasks,
+      completedTasks: dummyStats.completedTasks,
     };
   }, [workspaces, projects]);
 
@@ -190,28 +273,43 @@ export default function Dashboard() {
                   <Calendar className="h-4 w-4" />
                   Today's Tasks
                 </CardTitle>
-                <CardDescription>
-                  Your priority tasks for today
-                </CardDescription>
+                <CardDescription>Your priority tasks for today</CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
                 {todaysTasks.map((task) => (
-                  <div key={task.id} className="flex items-center justify-between p-2.5 rounded-lg border bg-card hover:bg-accent/50 transition-colors">
+                  <div
+                    key={task.id}
+                    className="flex items-center justify-between p-2.5 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
+                  >
                     <div className="flex items-center gap-3">
-                      <div className={`w-2 h-2 rounded-full ${
-                        task.priority === 'high' ? 'bg-red-500' :
-                        task.priority === 'medium' ? 'bg-yellow-500' : 'bg-green-500'
-                      }`} />
+                      <div
+                        className={`w-2 h-2 rounded-full ${
+                          task.priority === "high"
+                            ? "bg-red-500"
+                            : task.priority === "medium"
+                            ? "bg-yellow-500"
+                            : "bg-green-500"
+                        }`}
+                      />
                       <div>
                         <p className="font-medium text-sm">{task.title}</p>
-                        <p className="text-xs text-muted-foreground">{task.project}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {task.project}
+                        </p>
                       </div>
                     </div>
                     <div className="text-right">
-                      <Badge variant={task.priority === 'high' ? 'destructive' : 'secondary'} className="text-xs">
+                      <Badge
+                        variant={
+                          task.priority === "high" ? "destructive" : "secondary"
+                        }
+                        className="text-xs"
+                      >
                         {task.priority}
                       </Badge>
-                      <p className="text-xs text-muted-foreground mt-1">{task.dueTime}</p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {task.dueTime}
+                      </p>
                     </div>
                   </div>
                 ))}
@@ -235,7 +333,10 @@ export default function Dashboard() {
               </CardHeader>
               <CardContent className="space-y-3">
                 {recentActivity.map((activity) => (
-                  <div key={activity.id} className="flex items-start gap-3 p-2.5 rounded-lg border bg-card">
+                  <div
+                    key={activity.id}
+                    className="flex items-start gap-3 p-2.5 rounded-lg border bg-card"
+                  >
                     <Avatar className="h-7 w-7">
                       <AvatarFallback className="text-xs">
                         {activity.user.charAt(0)}
@@ -243,13 +344,19 @@ export default function Dashboard() {
                     </Avatar>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm">
-                        <span className="font-medium">{activity.user}</span> {activity.action.toLowerCase()}{' '}
+                        <span className="font-medium">{activity.user}</span>{" "}
+                        {activity.action.toLowerCase()}{" "}
                         <span className="font-medium">"{activity.item}"</span>
                         {activity.project && (
-                          <span className="text-muted-foreground"> in {activity.project}</span>
+                          <span className="text-muted-foreground">
+                            {" "}
+                            in {activity.project}
+                          </span>
                         )}
                       </p>
-                      <p className="text-xs text-muted-foreground">{activity.time}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {activity.time}
+                      </p>
                     </div>
                   </div>
                 ))}
@@ -271,7 +378,11 @@ export default function Dashboard() {
                       <XAxis dataKey="day" />
                       <YAxis />
                       <ChartTooltip content={<ChartTooltipContent />} />
-                      <Bar dataKey="completed" fill="var(--color-completed)" radius={4} />
+                      <Bar
+                        dataKey="completed"
+                        fill="var(--color-completed)"
+                        radius={4}
+                      />
                     </BarChart>
                   </ResponsiveContainer>
                 </ChartContainer>
@@ -291,14 +402,23 @@ export default function Dashboard() {
               </CardHeader>
               <CardContent className="space-y-3">
                 {upcomingDeadlines.map((deadline) => (
-                  <div key={deadline.id} className="flex items-center justify-between p-2.5 rounded-lg border bg-card">
+                  <div
+                    key={deadline.id}
+                    className="flex items-center justify-between p-2.5 rounded-lg border bg-card"
+                  >
                     <div>
                       <p className="font-medium text-sm">{deadline.title}</p>
-                      <p className="text-xs text-muted-foreground">{deadline.project}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {deadline.project}
+                      </p>
                     </div>
                     <div className="text-right">
                       <p className="text-sm font-medium">{deadline.dueDate}</p>
-                      <Badge variant={deadline.daysLeft <= 7 ? 'destructive' : 'secondary'}>
+                      <Badge
+                        variant={
+                          deadline.daysLeft <= 7 ? "destructive" : "secondary"
+                        }
+                      >
                         {deadline.daysLeft}d left
                       </Badge>
                     </div>
@@ -317,13 +437,20 @@ export default function Dashboard() {
               </CardHeader>
               <CardContent className="space-y-3">
                 {newsUpdates.map((news) => (
-                  <div key={news.id} className="p-2.5 rounded-lg border bg-card">
+                  <div
+                    key={news.id}
+                    className="p-2.5 rounded-lg border bg-card"
+                  >
                     <div className="flex items-start gap-2 mb-2">
                       <Star className="h-3 w-3 text-yellow-500 mt-0.5 flex-shrink-0" />
                       <div>
                         <p className="font-medium text-sm">{news.title}</p>
-                        <p className="text-xs text-muted-foreground mt-1">{news.description}</p>
-                        <p className="text-xs text-muted-foreground mt-2">{news.date}</p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {news.description}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-2">
+                          {news.date}
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -337,15 +464,27 @@ export default function Dashboard() {
                 <CardTitle className="text-lg">Quick Actions</CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
-                <Button className="w-full justify-start" variant="outline" size="sm">
+                <Button
+                  className="w-full justify-start"
+                  variant="outline"
+                  size="sm"
+                >
                   <Plus className="mr-2 h-3 w-3" />
                   Create New Project
                 </Button>
-                <Button className="w-full justify-start" variant="outline" size="sm">
+                <Button
+                  className="w-full justify-start"
+                  variant="outline"
+                  size="sm"
+                >
                   <Users className="mr-2 h-3 w-3" />
                   Invite Team Member
                 </Button>
-                <Button className="w-full justify-start" variant="outline" size="sm">
+                <Button
+                  className="w-full justify-start"
+                  variant="outline"
+                  size="sm"
+                >
                   <Calendar className="mr-2 h-3 w-3" />
                   Schedule Meeting
                 </Button>

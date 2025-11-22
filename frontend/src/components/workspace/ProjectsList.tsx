@@ -5,6 +5,8 @@ import {
   Grid3X3,
   Table as TableIcon,
   Loader2,
+  Edit,
+  Trash2,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "../ui/button";
@@ -30,15 +32,17 @@ import {
   getStatusLabel,
   calculateTimelineProgress,
 } from "@/lib/project-utils";
+import { DataTable, ColumnDef } from "@/components/ui/data-table";
+import { toast } from "sonner";
 
 export default function ProjectsList() {
   const navigate = useNavigate();
   const { currentWorkspace } = useWorkspaceStore();
   const { projects, isLoading, fetchProjects, createProject, clearProjects } =
     useProjectStore();
-  const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState<"cards" | "table">("table");
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     if (currentWorkspace?.id) {
@@ -52,16 +56,278 @@ export default function ProjectsList() {
     navigate(`/${currentWorkspace?.slug}/${project.slug}`);
   };
 
-  const filteredProjects = projects.filter(
-    (project) =>
-      project.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (project.description &&
-        project.description.toLowerCase().includes(searchQuery.toLowerCase()))
-  );
-
   const handleProjectCreated = (project: Project) => {
     console.log("Project created:", project);
   };
+
+  const projectColumns: ColumnDef<Project>[] = [
+    {
+      key: "name",
+      header: "Project",
+      sortable: true,
+      minWidth: 300,
+      resizable: true,
+      searchable: true,
+      searchValue: (project) => project.name,
+      tooltipText: (project) => project.name,
+      cell: (project) => (
+        <button
+          type="button"
+          onClick={() => handleProjectClick(project)}
+          className="flex items-center gap-3 hover:underline text-left w-full"
+        >
+          <div
+            className="w-4 h-4 rounded-full flex-shrink-0"
+            style={{ backgroundColor: project.color || "#f1594a" }}
+          />
+          <div>
+            <div className="font-semibold text-base">{project.name}</div>
+          </div>
+        </button>
+      ),
+    },
+    {
+      key: "status",
+      header: "Status",
+      sortable: true,
+      minWidth: 100,
+      resizable: true,
+      searchable: true,
+      searchValue: (project) => getStatusLabel(project.status),
+      tooltipText: (project) => getStatusLabel(project.status),
+      cell: (project) => (
+        <Badge className={getStatusColor(project.status)}>
+          {getStatusLabel(project.status)}
+        </Badge>
+      ),
+    },
+    {
+      key: "startDate",
+      header: "Start Date",
+      sortable: true,
+      minWidth: 150,
+      resizable: true,
+      tooltipText: (project) =>
+        project.startDate
+          ? format(new Date(project.startDate), "MMM dd, yyyy")
+          : "-",
+      cell: (project) => (
+        <span className="text-sm">
+          {project.startDate
+            ? format(new Date(project.startDate), "MMM dd, yyyy")
+            : "-"}
+        </span>
+      ),
+    },
+    {
+      key: "endDate",
+      header: "End Date",
+      sortable: true,
+      minWidth: 150,
+      resizable: true,
+      tooltipText: (project) =>
+        project.endDate
+          ? format(new Date(project.endDate), "MMM dd, yyyy")
+          : "-",
+      cell: (project) => (
+        <span className="text-sm">
+          {project.endDate
+            ? format(new Date(project.endDate), "MMM dd, yyyy")
+            : "-"}
+        </span>
+      ),
+    },
+    {
+      key: "progress",
+      header: "Progress",
+      sortable: false,
+      minWidth: 120,
+      resizable: true,
+      tooltipText: (project) =>
+        `${Math.round(calculateTimelineProgress(project))}%`,
+      cell: (project) => (
+        <div className="flex flex-col items-center gap-1">
+          <Progress
+            value={calculateTimelineProgress(project)}
+            className="h-2 w-20"
+          />
+        </div>
+      ),
+    },
+    {
+      key: "tasks",
+      header: "Tasks",
+      sortable: false,
+      minWidth: 80,
+      resizable: true,
+      tooltipText: () => "0/0",
+      cell: () => <span className="font-semibold">0/0</span>,
+    },
+    {
+      key: "members",
+      header: "Members",
+      sortable: false,
+      minWidth: 100,
+      resizable: true,
+      tooltipText: (project) => `${project.members?.length || 0} members`,
+      cell: (project) => (
+        <span className="font-semibold">{project.members?.length || 0}</span>
+      ),
+    },
+    {
+      key: "createdBy",
+      header: "Created By",
+      sortable: false,
+      minWidth: 120,
+      resizable: true,
+      searchable: true,
+      searchValue: (project) =>
+        project.createdBy?.firstName || project.createdBy?.email || "Unknown",
+      tooltipText: (project) =>
+        project.createdBy?.firstName || project.createdBy?.email || "Unknown",
+      tooltipContent: (project) => {
+        const creator = project.createdBy;
+        if (!creator) return null;
+
+        return (
+          <div className="space-y-3 min-w-[200px]">
+            <div className="flex items-center gap-3">
+              <div
+                className="w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold text-sm"
+                style={{ backgroundColor: creator.color || "#f1594a" }}
+              >
+                {creator.image ? (
+                  <img
+                    src={creator.image}
+                    alt={creator.firstName || creator.username}
+                    className="w-10 h-10 rounded-full object-cover"
+                  />
+                ) : (
+                  (
+                    creator.firstName?.[0] ||
+                    creator.username?.[0] ||
+                    creator.email?.[0] ||
+                    "?"
+                  ).toUpperCase()
+                )}
+              </div>
+              <div>
+                <div className="font-semibold text-sm">
+                  {creator.firstName && creator.lastName
+                    ? `${creator.firstName} ${creator.lastName}`
+                    : creator.firstName || creator.username}
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  @{creator.username}
+                </div>
+              </div>
+            </div>
+            {creator.bio && (
+              <div className="text-xs text-muted-foreground border-t pt-2">
+                {creator.bio}
+              </div>
+            )}
+          </div>
+        );
+      },
+      cell: (project) => (
+        <span className="text-sm">
+          {project.createdBy?.firstName ||
+            project.createdBy?.email ||
+            "Unknown"}
+        </span>
+      ),
+    },
+    {
+      key: "tags",
+      header: "Tags",
+      sortable: false,
+      minWidth: 120,
+      resizable: true,
+      searchable: true,
+      searchValue: (project) =>
+        project.tags && project.tags.length > 0 ? project.tags.join(" ") : "",
+      tooltipText: (project) =>
+        project.tags && project.tags.length > 0
+          ? project.tags.join(", ")
+          : "No tags",
+      cell: (project) =>
+        project.tags && project.tags.length > 0 ? (
+          <div className="flex gap-1 items-center">
+            {project.tags.slice(0, 2).map((tag, index) => (
+              <Badge
+                key={index}
+                variant="secondary"
+                className="text-xs px-1 py-0"
+              >
+                {tag}
+              </Badge>
+            ))}
+            {project.tags.length > 2 && (
+              <span className="text-xs text-muted-foreground">
+                +{project.tags.length - 2}
+              </span>
+            )}
+          </div>
+        ) : (
+          <span className="text-muted-foreground">-</span>
+        ),
+    },
+    {
+      key: "createdAt",
+      header: "Created",
+      sortable: true,
+      minWidth: 150,
+      resizable: true,
+      tooltipText: (project) =>
+        format(new Date(project.createdAt), "MMM dd, yyyy"),
+      cell: (project) => (
+        <span className="text-sm">
+          {format(new Date(project.createdAt), "MMM dd, yyyy")}
+        </span>
+      ),
+    },
+    {
+      key: "updatedAt",
+      header: "Updated",
+      sortable: true,
+      minWidth: 150,
+      resizable: true,
+      tooltipText: (project) =>
+        format(new Date(project.updatedAt), "MMM dd, yyyy"),
+      cell: (project) => (
+        <span className="text-sm">
+          {format(new Date(project.updatedAt), "MMM dd, yyyy")}
+        </span>
+      ),
+    },
+    {
+      key: "actions",
+      header: "Actions",
+      sortable: false,
+      minWidth: 50,
+      resizable: false,
+      isPinned: "right",
+      cell: (project) => (
+        <div className="flex gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => toast.info(`Edit project: ${project.name}`)}
+          >
+            <Edit className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => toast.error(`Delete project: ${project.name}`)}
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
+      ),
+    },
+  ];
 
   return (
     <div className="space-y-6">
@@ -83,9 +349,9 @@ export default function ProjectsList() {
         </Button>
       </div>
 
-      {/* Search and View Toggle */}
+      {/* View Toggle and Search */}
       <div className="flex items-center justify-between gap-4">
-        <div className="relative flex-1 max-w-md">
+        <div className="relative max-w-md">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder="Search projects..."
@@ -94,8 +360,6 @@ export default function ProjectsList() {
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
-
-        {/* View Toggle */}
         <div className="flex gap-1 items-center bg-muted rounded-lg p-1.5 h-12">
           <Button
             variant={viewMode === "cards" ? "default" : "ghost"}
@@ -126,7 +390,7 @@ export default function ProjectsList() {
             <p className="text-muted-foreground">Loading projects...</p>
           </div>
         </div>
-      ) : filteredProjects.length === 0 ? (
+      ) : projects.length === 0 ? (
         <div className="text-center py-12">
           <p className="text-muted-foreground text-lg">
             {projects.length === 0 ? (
@@ -146,7 +410,7 @@ export default function ProjectsList() {
         </div>
       ) : viewMode === "cards" ? (
         <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-          {filteredProjects.map((project) => (
+          {projects.map((project) => (
             <ProjectCard
               key={project.id}
               project={project}
@@ -155,102 +419,16 @@ export default function ProjectsList() {
           ))}
         </div>
       ) : (
-        <div className="rounded-lg border bg-card">
-          <TableComponent>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-[300px]">Project</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Progress</TableHead>
-                <TableHead>Tasks</TableHead>
-                <TableHead>Members</TableHead>
-                <TableHead>Tags</TableHead>
-                <TableHead>Created</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredProjects.map((project) => (
-                <TableRow
-                  key={project.id}
-                  className="cursor-pointer hover:bg-muted/50 transition-colors"
-                  onClick={() => handleProjectClick(project)}
-                >
-                  <TableCell>
-                    <div className="flex items-center gap-3">
-                      <div
-                        className="w-4 h-4 rounded-full flex-shrink-0"
-                        style={{ backgroundColor: project.color || "#f1594a" }}
-                      />
-                      <div>
-                        <div className="font-semibold text-base">
-                          {project.name}
-                        </div>
-                        {project.description && (
-                          <div className="text-sm text-muted-foreground line-clamp-2">
-                            {project.description}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Badge className={getStatusColor(project.status)}>
-                      {getStatusLabel(project.status)}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <div className="space-y-2 min-w-[120px]">
-                      {/* <div className="flex items-center justify-between text-sm">
-                        <span className="text-muted-foreground">
-                          {calculateTimelineProgress(project)}%
-                        </span>
-                      </div> */}
-                      <Progress
-                        value={calculateTimelineProgress(project)}
-                        className="h-2 w-24"
-                      />
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <span className="font-semibold">0/0</span>
-                  </TableCell>
-                  <TableCell>
-                    <span className="font-semibold">
-                      {project.members?.length || 0}
-                    </span>
-                  </TableCell>
-                  <TableCell>
-                    {project.tags && project.tags.length > 0 ? (
-                      <div className="flex flex-wrap gap-1">
-                        {project.tags.slice(0, 2).map((tag, index) => (
-                          <Badge
-                            key={index}
-                            variant="secondary"
-                            className="text-xs"
-                          >
-                            {tag}
-                          </Badge>
-                        ))}
-                        {project.tags.length > 2 && (
-                          <span className="text-xs text-muted-foreground">
-                            +{project.tags.length - 2}
-                          </span>
-                        )}
-                      </div>
-                    ) : (
-                      <span className="text-muted-foreground">-</span>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <span className="text-sm">
-                      {format(new Date(project.createdAt), "MMM dd, yyyy")}
-                    </span>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </TableComponent>
-        </div>
+        <DataTable
+          data={projects as unknown as Record<string, unknown>[]}
+          columns={
+            projectColumns as unknown as ColumnDef<Record<string, unknown>>[]
+          }
+          search={{
+            enabled: true,
+          }}
+          searchQuery={searchQuery}
+        />
       )}
 
       {/* Create Project Dialog */}

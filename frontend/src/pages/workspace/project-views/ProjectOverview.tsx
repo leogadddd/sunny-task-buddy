@@ -9,11 +9,30 @@ import { useWorkspaceStore } from "@/stores/workspace.store";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, Plus, CheckCircle2, Clock, TrendingUp, Users, Calendar, BarChart3 } from "lucide-react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  ArrowLeft,
+  Plus,
+  CheckCircle2,
+  Clock,
+  TrendingUp,
+  Users,
+  Calendar,
+  BarChart3,
+} from "lucide-react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+} from "@/components/ui/chart";
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis } from "recharts";
 
 // Mock data for demonstration
@@ -43,16 +62,55 @@ const chartConfig = {
 
 // Mock data for project overview sections
 const todaysTasks = [
-  { id: 1, title: "Review project proposal", priority: "high", dueTime: "2:00 PM" },
-  { id: 2, title: "Update documentation", priority: "medium", dueTime: "4:00 PM" },
-  { id: 3, title: "Client feedback call", priority: "high", dueTime: "5:00 PM" },
+  {
+    id: 1,
+    title: "Review project proposal",
+    priority: "high",
+    dueTime: "2:00 PM",
+  },
+  {
+    id: 2,
+    title: "Update documentation",
+    priority: "medium",
+    dueTime: "4:00 PM",
+  },
+  {
+    id: 3,
+    title: "Client feedback call",
+    priority: "high",
+    dueTime: "5:00 PM",
+  },
 ];
 
 const recentActivity = [
-  { id: 1, action: "Completed task", item: "Database optimization", time: "2 hours ago", user: "You" },
-  { id: 2, action: "Created task", item: "Mobile App UI", time: "1 day ago", user: "Sarah" },
-  { id: 3, action: "Updated deadline", item: "Q4 Report", time: "2 days ago", user: "Mike" },
-  { id: 4, action: "Added comment", item: "Design review", time: "3 days ago", user: "You" },
+  {
+    id: 1,
+    action: "Completed task",
+    item: "Database optimization",
+    time: "2 hours ago",
+    user: "You",
+  },
+  {
+    id: 2,
+    action: "Created task",
+    item: "Mobile App UI",
+    time: "1 day ago",
+    user: "Sarah",
+  },
+  {
+    id: 3,
+    action: "Updated deadline",
+    item: "Q4 Report",
+    time: "2 days ago",
+    user: "Mike",
+  },
+  {
+    id: 4,
+    action: "Added comment",
+    item: "Design review",
+    time: "3 days ago",
+    user: "You",
+  },
 ];
 
 const upcomingDeadlines = [
@@ -169,9 +227,7 @@ export default function ProjectOverview() {
       {/* Header */}
       <div className="flex justify-between items-start">
         <div className="space-y-1">
-          <h1 className="text-3xl font-bold text-foreground">
-            {project.name}
-          </h1>
+          <h1 className="text-3xl font-bold text-foreground">{project.name}</h1>
           <p className="text-base text-muted-foreground">
             {project.description || "Project overview and key metrics"}
           </p>
@@ -195,7 +251,9 @@ export default function ProjectOverview() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{projectStats.totalTasks}</div>
-            <p className="text-xs text-muted-foreground">All tasks in project</p>
+            <p className="text-xs text-muted-foreground">
+              All tasks in project
+            </p>
           </CardContent>
         </Card>
         <Card>
@@ -204,7 +262,9 @@ export default function ProjectOverview() {
             <CheckCircle2 className="h-4 w-4 text-green-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{projectStats.completedTasks}</div>
+            <div className="text-2xl font-bold">
+              {projectStats.completedTasks}
+            </div>
             <p className="text-xs text-muted-foreground">Tasks this week</p>
           </CardContent>
         </Card>
@@ -214,7 +274,9 @@ export default function ProjectOverview() {
             <Clock className="h-4 w-4 text-orange-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{projectStats.pendingTasks}</div>
+            <div className="text-2xl font-bold">
+              {projectStats.pendingTasks}
+            </div>
             <p className="text-xs text-muted-foreground">Active tasks</p>
           </CardContent>
         </Card>
@@ -224,7 +286,9 @@ export default function ProjectOverview() {
             <TrendingUp className="h-4 w-4 text-red-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{projectStats.overdueTasks}</div>
+            <div className="text-2xl font-bold">
+              {projectStats.overdueTasks}
+            </div>
             <p className="text-xs text-muted-foreground">Need attention</p>
           </CardContent>
         </Card>
@@ -241,32 +305,47 @@ export default function ProjectOverview() {
                 <Calendar className="h-4 w-4" />
                 Today's Tasks
               </CardTitle>
-              <CardDescription>
-                Your priority tasks for today
-              </CardDescription>
+              <CardDescription>Your priority tasks for today</CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
               {todaysTasks.map((task) => (
-                <div key={task.id} className="flex items-center justify-between p-2.5 rounded-lg border bg-card hover:bg-accent/50 transition-colors">
+                <div
+                  key={task.id}
+                  className="flex items-center justify-between p-2.5 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
+                >
                   <div className="flex items-center gap-3">
-                    <div className={`w-2 h-2 rounded-full ${
-                      task.priority === 'high' ? 'bg-red-500' :
-                      task.priority === 'medium' ? 'bg-yellow-500' : 'bg-green-500'
-                    }`} />
+                    <div
+                      className={`w-2 h-2 rounded-full ${
+                        task.priority === "high"
+                          ? "bg-red-500"
+                          : task.priority === "medium"
+                          ? "bg-yellow-500"
+                          : "bg-green-500"
+                      }`}
+                    />
                     <div>
                       <p className="font-medium text-sm">{task.title}</p>
                     </div>
                   </div>
                   <div className="text-right">
-                    <Badge variant={task.priority === 'high' ? 'destructive' : 'secondary'} className="text-xs">
+                    <Badge
+                      variant={
+                        task.priority === "high" ? "destructive" : "secondary"
+                      }
+                      className="text-xs"
+                    >
                       {task.priority}
                     </Badge>
-                    <p className="text-xs text-muted-foreground mt-1">{task.dueTime}</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {task.dueTime}
+                    </p>
                   </div>
                 </div>
               ))}
               <Button variant="outline" className="w-full" size="sm" asChild>
-                <Link to={`/${params.workspaceSlug}/${params.projectSlug}/tasks`}>
+                <Link
+                  to={`/${params.workspaceSlug}/${params.projectSlug}/tasks`}
+                >
                   View All Tasks
                 </Link>
               </Button>
@@ -280,13 +359,14 @@ export default function ProjectOverview() {
                 <TrendingUp className="h-4 w-4" />
                 Recent Activity
               </CardTitle>
-              <CardDescription>
-                Latest updates in this project
-              </CardDescription>
+              <CardDescription>Latest updates in this project</CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
               {recentActivity.map((activity) => (
-                <div key={activity.id} className="flex items-start gap-3 p-2.5 rounded-lg border bg-card">
+                <div
+                  key={activity.id}
+                  className="flex items-start gap-3 p-2.5 rounded-lg border bg-card"
+                >
                   <Avatar className="h-7 w-7">
                     <AvatarFallback className="text-xs">
                       {activity.user.charAt(0)}
@@ -294,10 +374,13 @@ export default function ProjectOverview() {
                   </Avatar>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm">
-                      <span className="font-medium">{activity.user}</span> {activity.action.toLowerCase()}{' '}
+                      <span className="font-medium">{activity.user}</span>{" "}
+                      {activity.action.toLowerCase()}{" "}
                       <span className="font-medium">"{activity.item}"</span>
                     </p>
-                    <p className="text-xs text-muted-foreground">{activity.time}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {activity.time}
+                    </p>
                   </div>
                 </div>
               ))}
@@ -319,7 +402,11 @@ export default function ProjectOverview() {
                     <XAxis dataKey="day" />
                     <YAxis />
                     <ChartTooltip content={<ChartTooltipContent />} />
-                    <Bar dataKey="completed" fill="var(--color-completed)" radius={4} />
+                    <Bar
+                      dataKey="completed"
+                      fill="var(--color-completed)"
+                      radius={4}
+                    />
                   </BarChart>
                 </ResponsiveContainer>
               </ChartContainer>
@@ -339,13 +426,21 @@ export default function ProjectOverview() {
             </CardHeader>
             <CardContent className="space-y-3">
               {upcomingDeadlines.map((deadline) => (
-                <div key={deadline.id} className="flex items-center justify-between p-2.5 rounded-lg border bg-card">
+                <div
+                  key={deadline.id}
+                  className="flex items-center justify-between p-2.5 rounded-lg border bg-card"
+                >
                   <div>
                     <p className="font-medium text-sm">{deadline.title}</p>
                   </div>
                   <div className="text-right">
                     <p className="text-sm font-medium">{deadline.dueDate}</p>
-                    <Badge variant={deadline.daysLeft <= 7 ? 'destructive' : 'secondary'} className="text-xs">
+                    <Badge
+                      variant={
+                        deadline.daysLeft <= 7 ? "destructive" : "secondary"
+                      }
+                      className="text-xs"
+                    >
                       {deadline.daysLeft}d left
                     </Badge>
                   </div>
@@ -360,20 +455,41 @@ export default function ProjectOverview() {
               <CardTitle className="text-lg">Quick Actions</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
-              <Button className="w-full justify-start" variant="outline" size="sm" asChild>
-                <Link to={`/${params.workspaceSlug}/${params.projectSlug}/tasks`}>
+              <Button
+                className="w-full justify-start"
+                variant="outline"
+                size="sm"
+                asChild
+              >
+                <Link
+                  to={`/${params.workspaceSlug}/${params.projectSlug}/tasks`}
+                >
                   <Plus className="mr-2 h-3 w-3" />
                   Create New Task
                 </Link>
               </Button>
-              <Button className="w-full justify-start" variant="outline" size="sm" asChild>
-                <Link to={`/${params.workspaceSlug}/${params.projectSlug}/kanban`}>
+              <Button
+                className="w-full justify-start"
+                variant="outline"
+                size="sm"
+                asChild
+              >
+                <Link
+                  to={`/${params.workspaceSlug}/${params.projectSlug}/kanban`}
+                >
                   <BarChart3 className="mr-2 h-3 w-3" />
                   View Kanban Board
                 </Link>
               </Button>
-              <Button className="w-full justify-start" variant="outline" size="sm" asChild>
-                <Link to={`/${params.workspaceSlug}/${params.projectSlug}/calendar`}>
+              <Button
+                className="w-full justify-start"
+                variant="outline"
+                size="sm"
+                asChild
+              >
+                <Link
+                  to={`/${params.workspaceSlug}/${params.projectSlug}/calendar`}
+                >
                   <Calendar className="mr-2 h-3 w-3" />
                   Project Calendar
                 </Link>
